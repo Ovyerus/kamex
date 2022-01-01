@@ -3,6 +3,8 @@ defmodule Lixp.Interpreter do
   alias Lixp.Exceptions
   alias Lixp.Interpreter.{Builtins, SpecialForms}
 
+  # TODO: redo stuff to revolve around true/false instead of empty lists lol
+
   def to_ast(input) when is_binary(input) do
     with input <- String.to_charlist(input),
          {:ok, tokens, _} <- :lexer.string(input),
@@ -37,7 +39,7 @@ defmodule Lixp.Interpreter do
           Builtins.run(ident, args, locals)
 
         is_function(locals[ident]) ->
-          {locals[ident].(args), locals}
+          {locals[ident].(args, locals), locals}
 
         true ->
           raise Exceptions.UnknownFunctionError,
@@ -53,7 +55,7 @@ defmodule Lixp.Interpreter do
     {head_result, locals} = compute_expr(head, locals)
 
     cond do
-      is_function(head_result) -> head_result.(tail)
+      is_function(head_result) -> head_result.(tail, locals)
       is_atom(head_result) -> compute_expr([head_result | tail], locals)
       true -> [head_result | compute_expr(tail, locals)]
     end

@@ -65,7 +65,7 @@ defmodule Lixp.Interpreter.SpecialForms do
     input_len = length(input_args)
 
     # TODO: should this get called with locals existing at the moment it gets called? or defined
-    fun = fn called_args ->
+    fun = fn called_args, called_local ->
       called_args_len = length(called_args)
 
       if called_args_len != input_len do
@@ -77,7 +77,7 @@ defmodule Lixp.Interpreter.SpecialForms do
       lamb_locals =
         input_args
         |> Enum.zip(called_args)
-        |> Enum.into(locals)
+        |> Enum.into(called_local)
 
       compute_expr(body, lamb_locals, false)
     end
@@ -87,7 +87,7 @@ defmodule Lixp.Interpreter.SpecialForms do
 
   def if_(condition, block, else_block \\ nil, locals) do
     result =
-      if compute_expr(condition, locals) != [],
+      if compute_expr(condition, locals, false) != [],
         do: compute_expr(block, locals),
         else: compute_expr(else_block, locals)
 
