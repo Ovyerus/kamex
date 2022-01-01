@@ -11,12 +11,12 @@ defmodule Lixp.Interpreter do
     end
   end
 
-  def run(input) when is_binary(input) do
+  def run(input, locals \\ %{}) when is_binary(input) do
     {:ok, ast} = to_ast(input)
 
     # TODO: handle multiple root nodes
     [first | _] = ast
-    compute_expr(first)
+    compute_expr(first, locals)
   end
 
   def compute_expr(node, locals \\ %{}, ret_locals \\ true)
@@ -24,12 +24,11 @@ defmodule Lixp.Interpreter do
   def compute_expr([ident | args], locals, ret_locals) when is_atom(ident) do
     arg_len = length(args)
 
-    # TODO: need to do unwrapping so that we don't end up with random {value, locals} tuples in the middle of the result
-
     {result, locals} =
       cond do
         SpecialForms.special_form?(ident, arg_len) -> SpecialForms.run(ident, args, locals)
         Builtins.builtin?(ident, arg_len) -> Builtins.run(ident, args, locals)
+        is_function(locals[ident]) -> {locals[ident].(args), locals}
         true -> raise Exceptions.UnknownFunctionError, message: "undefined function `#{ident}`"
       end
 
@@ -49,9 +48,9 @@ defmodule Lixp.Interpreter do
   end
 
   def compute_expr(ident, locals, _ret_locals) when is_atom(ident) do
-    found = Map.get(locals, ident, :__not_found)
+    found = Map.get(locals, ident)
 
-    if found === :__not_found do
+    if !found do
       raise Exceptions.UnknownLocalError, message: "unknown local `#{ident}`"
     end
 

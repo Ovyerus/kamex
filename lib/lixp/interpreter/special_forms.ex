@@ -7,6 +7,7 @@ defmodule Lixp.Interpreter.SpecialForms do
   @supported [
     quote: 1,
     lambda: 2,
+    let: 2,
     if: 2,
     if: 3,
     or: :infinity,
@@ -16,6 +17,7 @@ defmodule Lixp.Interpreter.SpecialForms do
   @mapping [
     quote: :quote,
     lambda: :lambda,
+    let: :let,
     if: :if_,
     or: :or_,
     and: :and_
@@ -32,6 +34,11 @@ defmodule Lixp.Interpreter.SpecialForms do
   end
 
   def quote(arg, locals), do: {arg, locals}
+
+  def let(name, value, locals) do
+    value = compute_expr(value, locals, false)
+    {value, Map.put(locals, name, value)}
+  end
 
   def lambda(input_args, body, locals) do
     input_len = length(input_args)
