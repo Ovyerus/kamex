@@ -1,7 +1,7 @@
 defmodule Lixp.Interpreter.Builtins do
   @moduledoc false
 
-  import Lixp.Interpreter, only: [compute_expr: 1]
+  import Lixp.Interpreter, only: [compute_expr: 2]
 
   @supported [
     +: :infinity,
@@ -11,7 +11,8 @@ defmodule Lixp.Interpreter.Builtins do
     ++: 1,
     incf: 1,
     cons: 2,
-    append: :infinity
+    append: :infinity,
+    list: :infinity
   ]
 
   @mapping [
@@ -22,7 +23,8 @@ defmodule Lixp.Interpreter.Builtins do
     ++: :incf,
     incf: :incf,
     cons: :cons,
-    append: :append
+    append: :append,
+    list: :list
   ]
 
   def builtin?(name, arity),
@@ -66,7 +68,7 @@ defmodule Lixp.Interpreter.Builtins do
     Enum.reduce(lists, [], fn x, acc -> acc ++ x end)
   end
 
-  # def list(args) when is_list(args) do
-  #   args
-  # end
+  def list(args) do
+    args
+  end
 end
