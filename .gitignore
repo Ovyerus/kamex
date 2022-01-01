@@ -5,7 +5,7 @@
 /.fetch
 erl_crash.dump
 *.ez
-lixp-*.tar
+kamex-*.tar
 /tmp/
 .elixir_ls
 src/*.erl

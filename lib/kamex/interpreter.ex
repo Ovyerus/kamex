@@ -1,7 +1,7 @@
-defmodule Lixp.Interpreter do
+defmodule Kamex.Interpreter do
   @moduledoc false
-  alias Lixp.Exceptions
-  alias Lixp.Interpreter.{Builtins, SpecialForms}
+  alias Kamex.Exceptions
+  alias Kamex.Interpreter.{Builtins, SpecialForms}
 
   # TODO: redo stuff to revolve around true/false instead of empty lists lol
 
@@ -14,11 +14,13 @@ defmodule Lixp.Interpreter do
   end
 
   def run(input, locals \\ %{}) when is_binary(input) do
+    # TODO: add debug logs for lambdas and some stuff to figure out how stuff works
+
     {:ok, ast} = to_ast(input)
 
     Enum.reduce(
       ast,
-      {nil, %{}},
+      {nil, locals},
       fn node, {_, locals} ->
         compute_expr(node, locals)
       end

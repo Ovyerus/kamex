@@ -1,7 +1,7 @@
-defmodule Lixp.Interpreter.Builtins do
+defmodule Kamex.Interpreter.Builtins do
   @moduledoc false
 
-  import Lixp.Interpreter, only: [compute_expr: 3]
+  import Kamex.Interpreter, only: [compute_expr: 3]
 
   @supported [
     +: :infinity,

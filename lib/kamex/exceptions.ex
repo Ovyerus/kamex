@@ -1,4 +1,4 @@
-defmodule Lixp.Exceptions do
+defmodule Kamex.Exceptions do
   @moduledoc false
 
   defmodule ArityError do

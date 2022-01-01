@@ -1,8 +1,8 @@
-defmodule Lixp.Interpreter.SpecialForms do
+defmodule Kamex.Interpreter.SpecialForms do
   @moduledoc false
 
-  import Lixp.Interpreter, only: [compute_expr: 2, compute_expr: 3]
-  alias Lixp.Exceptions
+  import Kamex.Interpreter, only: [compute_expr: 2, compute_expr: 3]
+  alias Kamex.Exceptions
 
   @supported [
     quote: 1,

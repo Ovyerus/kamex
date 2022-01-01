@@ -1,6 +1,6 @@
-defmodule Lixp do
+defmodule Kamex do
   @moduledoc """
-  Documentation for `Lixp`.
+  Documentation for `Kamex`.
   """
 
   @doc """
@@ -8,7 +8,7 @@ defmodule Lixp do
 
   ## Examples
 
-      iex> Lixp.hello()
+      iex> Kamex.hello()
       :world
 
   """
