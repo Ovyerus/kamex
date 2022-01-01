@@ -41,5 +41,29 @@ defmodule Lixp.Interpreter.SpecialForms do
       else: compute_expr(else_block)
   end
 
-  # def or_(args)
+  # TODO: first-value/first-nil?
+
+  def or_(args) do
+    # {last, args} = List.pop_at(args, -1)
+
+    args
+    |> Stream.map(fn node -> compute_expr(node) end)
+    |> Enum.find(fn
+      [] -> false
+      _ -> true
+    end) || []
+
+    # end) || compute_expr(last)
+  end
+
+  def and_(args) do
+    {last, args} = List.pop_at(args, -1)
+
+    args
+    |> Stream.map(fn node -> compute_expr(node) end)
+    |> Enum.find(fn
+      [] -> true
+      _ -> false
+    end) || compute_expr(last)
+  end
 end
