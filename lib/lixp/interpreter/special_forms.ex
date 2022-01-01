@@ -1,7 +1,7 @@
 defmodule Lixp.Interpreter.SpecialForms do
   @moduledoc false
 
-  import Lixp.Interpreter, only: [compute_expr: 2]
+  import Lixp.Interpreter, only: [compute_expr: 2, compute_expr: 3]
   alias Lixp.Exceptions
 
   @supported [
@@ -51,9 +51,7 @@ defmodule Lixp.Interpreter.SpecialForms do
         |> Enum.zip(called_args)
         |> Enum.into(locals)
 
-      {result, _} = compute_expr(body, lamb_locals)
-
-      result
+      compute_expr(body, lamb_locals, false)
     end
 
     {fun, locals}

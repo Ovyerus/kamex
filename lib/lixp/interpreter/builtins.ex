@@ -1,7 +1,7 @@
 defmodule Lixp.Interpreter.Builtins do
   @moduledoc false
 
-  import Lixp.Interpreter, only: [compute_expr: 2]
+  import Lixp.Interpreter, only: [compute_expr: 3]
 
   @supported [
     +: :infinity,
@@ -12,7 +12,11 @@ defmodule Lixp.Interpreter.Builtins do
     incf: 1,
     cons: 2,
     append: :infinity,
-    list: :infinity
+    list: :infinity,
+    head: 1,
+    tail: 1,
+    car: 1,
+    cdr: 1
   ]
 
   @mapping [
@@ -24,14 +28,18 @@ defmodule Lixp.Interpreter.Builtins do
     incf: :incf,
     cons: :cons,
     append: :append,
-    list: :list
+    list: :list,
+    head: :head,
+    tail: :tail,
+    car: :head,
+    cdr: :tail
   ]
 
   def builtin?(name, arity),
     do: {name, arity} in @supported || Keyword.get(@supported, name) == :infinity
 
   def run(name, args, locals) do
-    args = Enum.map(args, &compute_expr(&1, locals))
+    args = Enum.map(args, &compute_expr(&1, locals, false))
 
     is_variable = Keyword.get(@supported, name) == :infinity
     real_fn = Keyword.get(@mapping, name)
@@ -72,4 +80,8 @@ defmodule Lixp.Interpreter.Builtins do
   def list(args) do
     args
   end
+
+  def head([hd | _]), do: hd
+
+  def tail([_ | tl]), do: tl
 end

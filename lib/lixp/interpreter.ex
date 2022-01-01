@@ -19,21 +19,26 @@ defmodule Lixp.Interpreter do
     compute_expr(first)
   end
 
-  def compute_expr(node, locals \\ %{})
+  def compute_expr(node, locals \\ %{}, ret_locals \\ true)
 
-  def compute_expr([ident | args], locals) when is_atom(ident) do
+  def compute_expr([ident | args], locals, ret_locals) when is_atom(ident) do
     arg_len = length(args)
 
     # TODO: need to do unwrapping so that we don't end up with random {value, locals} tuples in the middle of the result
 
-    cond do
-      SpecialForms.special_form?(ident, arg_len) -> SpecialForms.run(ident, args, locals)
-      Builtins.builtin?(ident, arg_len) -> Builtins.run(ident, args, locals)
-      true -> raise Exceptions.UnknownFunctionError, message: "undefined function `#{ident}`"
-    end
+    {result, locals} =
+      cond do
+        SpecialForms.special_form?(ident, arg_len) -> SpecialForms.run(ident, args, locals)
+        Builtins.builtin?(ident, arg_len) -> Builtins.run(ident, args, locals)
+        true -> raise Exceptions.UnknownFunctionError, message: "undefined function `#{ident}`"
+      end
+
+    if ret_locals,
+      do: {result, locals},
+      else: result
   end
 
-  def compute_expr([head | tail], locals) do
+  def compute_expr([head | tail], locals, _ret_locals) do
     {head_result, locals} = compute_expr(head, locals)
 
     cond do
@@ -43,7 +48,7 @@ defmodule Lixp.Interpreter do
     end
   end
 
-  def compute_expr(ident, locals) when is_atom(ident) do
+  def compute_expr(ident, locals, _ret_locals) when is_atom(ident) do
     found = Map.get(locals, ident, :__not_found)
 
     if found === :__not_found do
@@ -53,7 +58,7 @@ defmodule Lixp.Interpreter do
     found
   end
 
-  def compute_expr(node, _locals), do: node
+  def compute_expr(node, _locals, _ret_locals), do: node
 
   defp check_tokens(tokens) do
     {lcount, rcount} =
