@@ -8,4 +8,8 @@ defmodule Lixp.Exceptions do
   defmodule UnknownFunctionError do
     defexception [:message]
   end
+
+  defmodule UnbalancedParensError do
+    defexception [:message]
+  end
 end

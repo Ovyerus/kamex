@@ -4,9 +4,11 @@ defmodule Lixp.Interpreter do
   alias Lixp.Interpreter.{Builtins, SpecialForms}
 
   def to_ast(input) when is_binary(input) do
-    input = String.to_charlist(input)
-    {:ok, tokens, _} = :lexer.string(input)
-    :parser.parse(tokens)
+    with input <- String.to_charlist(input),
+         {:ok, tokens, _} <- :lexer.string(input),
+         :ok <- check_tokens(tokens) do
+      :parser.parse(tokens)
+    end
   end
 
   def run(input) when is_binary(input) do
@@ -29,4 +31,27 @@ defmodule Lixp.Interpreter do
   end
 
   def compute_expr(node), do: node
+
+  defp check_tokens(tokens) do
+    {lcount, rcount} =
+      Enum.reduce(tokens, {0, 0}, fn
+        {:"(", _}, {lcount, rcount} -> {lcount + 1, rcount}
+        {:")", _}, {lcount, rcount} -> {lcount, rcount + 1}
+        _, acc -> acc
+      end)
+
+    parens_balance = lcount - rcount
+
+    # TODO: modify lexer to give column count, and enrich info here
+    cond do
+      parens_balance > 0 ->
+        raise Exceptions.UnbalancedParensError, message: "Missing one or more closing parentheses"
+
+      parens_balance < 0 ->
+        raise Exceptions.UnbalancedParensError, message: "Missing one or more opening parentheses"
+
+      true ->
+        :ok
+    end
+  end
 end
