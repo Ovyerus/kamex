@@ -10,13 +10,17 @@ defmodule Lixp.Interpreter.Builtins do
     /: :infinity,
     ++: 1,
     incf: 1,
+    --: 1,
+    decf: 1,
     cons: 2,
     append: :infinity,
     list: :infinity,
     head: 1,
     tail: 1,
     car: 1,
-    cdr: 1
+    cdr: 1,
+    print: 1,
+    zerop: 1
   ]
 
   @mapping [
@@ -26,13 +30,17 @@ defmodule Lixp.Interpreter.Builtins do
     /: :div,
     ++: :incf,
     incf: :incf,
+    --: :decf,
+    decf: :decf,
     cons: :cons,
     append: :append,
     list: :list,
     head: :head,
     tail: :tail,
     car: :head,
-    cdr: :tail
+    cdr: :tail,
+    print: :print,
+    zerop: :zerop
   ]
 
   def builtin?(name, arity),
@@ -67,6 +75,10 @@ defmodule Lixp.Interpreter.Builtins do
     num + 1
   end
 
+  def decf(num) when is_integer(num) or is_float(num) do
+    num - 1
+  end
+
   # TODO: better error for non-list tail
   def cons(head, tail) when is_list(tail) do
     [head | tail]
@@ -77,11 +89,14 @@ defmodule Lixp.Interpreter.Builtins do
     Enum.reduce(lists, [], fn x, acc -> acc ++ x end)
   end
 
-  def list(args) do
-    args
-  end
+  def list(args), do: args
 
   def head([hd | _]), do: hd
 
   def tail([_ | tl]), do: tl
+
+  def print(str) when is_binary(str), do: IO.puts(str)
+
+  def zerop(term) when term == 0, do: true
+  def zerop(_term), do: []
 end

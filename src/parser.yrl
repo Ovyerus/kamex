@@ -5,7 +5,6 @@ Terminals '(' ')' int float ident string nil quot.
 group -> list       : ['$1'].
 group -> list group : ['$1' | '$2'].
 
-% TODO: empty list as nil instead?
 list -> nil           : [].
 list -> '(' ')'       : [].
 list -> '(' elems ')' : '$2'.
