@@ -1,9 +1,39 @@
 defmodule Lixp.Interpreter.Builtins do
   @moduledoc false
 
-  # def quote([arg]) do
-  #   arg
-  # end
+  import Lixp.Interpreter, only: [compute_expr: 1]
+
+  @supported [
+    +: :infinity,
+    -: :infinity,
+    *: :infinity,
+    /: :infinity,
+    incf: 1,
+    cons: 2,
+    append: :infinity
+  ]
+
+  @mapping [
+    +: :add,
+    -: :sub,
+    *: :mul,
+    /: :div,
+    # TODO: ++?
+    incf: :incf,
+    cons: :cons,
+    append: :append
+  ]
+
+  def builtin?(name, arity),
+    do: {name, arity} in @supported || Keyword.get(@supported, name) == :infinity
+
+  def run(name, args) do
+    args = Enum.map(args, &compute_expr/1)
+    is_variable = Keyword.get(@supported, name) == :infinity
+    real_fn = Keyword.get(@mapping, name)
+
+    apply(__MODULE__, real_fn, if(is_variable, do: [args], else: args))
+  end
 
   def add(args) when is_list(args) do
     Enum.sum(args)
@@ -21,12 +51,12 @@ defmodule Lixp.Interpreter.Builtins do
     Enum.reduce(args, fn x, acc -> acc * x end)
   end
 
-  def incf([num]) when is_integer(num) or is_float(num) do
+  def incf(num) when is_integer(num) or is_float(num) do
     num + 1
   end
 
   # TODO: better error for non-list tail
-  def cons([head | [tail]]) when is_list(tail) do
+  def cons(head, tail) when is_list(tail) do
     [head | tail]
   end
 

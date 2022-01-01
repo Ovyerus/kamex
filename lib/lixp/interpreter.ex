@@ -19,22 +19,12 @@ defmodule Lixp.Interpreter do
 
   # IDK if allowing lists that don't start with an ident if fine, but shrug
   def compute_expr([ident | args]) when is_atom(ident) do
-    if SpecialForms.special_form?(ident, length(args)) do
-      SpecialForms.run(ident, args)
-    else
-      args = Enum.map(args, &compute_expr/1)
+    arg_len = length(args)
 
-      case ident do
-        :+ -> Builtins.add(args)
-        :- -> Builtins.sub(args)
-        :* -> Builtins.mul(args)
-        :/ -> Builtins.div(args)
-        :incf -> Builtins.incf(args)
-        :list -> args
-        :cons -> Builtins.cons(args)
-        :append -> Builtins.append(args)
-        _ -> raise Exceptions.UnknownFunctionError, message: "undefined function `#{ident}`"
-      end
+    cond do
+      SpecialForms.special_form?(ident, arg_len) -> SpecialForms.run(ident, args)
+      Builtins.builtin?(ident, arg_len) -> Builtins.run(ident, args)
+      true -> raise Exceptions.UnknownFunctionError, message: "undefined function `#{ident}`"
     end
   end
 
