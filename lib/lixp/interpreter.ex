@@ -14,9 +14,13 @@ defmodule Lixp.Interpreter do
   def run(input, locals \\ %{}) when is_binary(input) do
     {:ok, ast} = to_ast(input)
 
-    # TODO: handle multiple root nodes
-    [first | _] = ast
-    compute_expr(first, locals)
+    Enum.reduce(
+      ast,
+      {nil, %{}},
+      fn node, {_, locals} ->
+        compute_expr(node, locals)
+      end
+    )
   end
 
   def compute_expr(node, locals \\ %{}, ret_locals \\ true)
@@ -26,10 +30,18 @@ defmodule Lixp.Interpreter do
 
     {result, locals} =
       cond do
-        SpecialForms.special_form?(ident, arg_len) -> SpecialForms.run(ident, args, locals)
-        Builtins.builtin?(ident, arg_len) -> Builtins.run(ident, args, locals)
-        is_function(locals[ident]) -> {locals[ident].(args), locals}
-        true -> raise Exceptions.UnknownFunctionError, message: "undefined function `#{ident}`"
+        SpecialForms.special_form?(ident, arg_len) ->
+          SpecialForms.run(ident, args, locals)
+
+        Builtins.builtin?(ident, arg_len) ->
+          Builtins.run(ident, args, locals)
+
+        is_function(locals[ident]) ->
+          {locals[ident].(args), locals}
+
+        true ->
+          raise Exceptions.UnknownFunctionError,
+            message: "undefined function `#{ident}/#{arg_len}`"
       end
 
     if ret_locals,
