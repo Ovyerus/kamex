@@ -2,7 +2,7 @@ Definitions.
 
 Digit       = [0-9]
 Int         = -?{Digit}+
-Ident        = [^'"\s\r\n\t\f\(\)\[\]]+
+Ident        = [^'"\s\r\n\t\f\(\)\[\],]+
 % '
 Whitespace  = [\s\t\n\r,]
 
