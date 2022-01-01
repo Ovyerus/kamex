@@ -8,6 +8,7 @@ defmodule Lixp.Interpreter.Builtins do
     -: :infinity,
     *: :infinity,
     /: :infinity,
+    ++: 1,
     incf: 1,
     cons: 2,
     append: :infinity
@@ -18,7 +19,7 @@ defmodule Lixp.Interpreter.Builtins do
     -: :sub,
     *: :mul,
     /: :div,
-    # TODO: ++?
+    ++: :incf,
     incf: :incf,
     cons: :cons,
     append: :append
