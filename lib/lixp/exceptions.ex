@@ -9,6 +9,10 @@ defmodule Lixp.Exceptions do
     defexception [:message]
   end
 
+  defmodule UnknownLocalError do
+    defexception [:message]
+  end
+
   defmodule UnbalancedParensError do
     defexception [:message]
   end

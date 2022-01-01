@@ -19,18 +19,41 @@ defmodule Lixp.Interpreter do
     compute_expr(first)
   end
 
-  # IDK if allowing lists that don't start with an ident if fine, but shrug
-  def compute_expr([ident | args]) when is_atom(ident) do
+  def compute_expr(node, locals \\ %{})
+
+  def compute_expr([ident | args], locals) when is_atom(ident) do
     arg_len = length(args)
 
+    # TODO: need to do unwrapping so that we don't end up with random {value, locals} tuples in the middle of the result
+
     cond do
-      SpecialForms.special_form?(ident, arg_len) -> SpecialForms.run(ident, args)
-      Builtins.builtin?(ident, arg_len) -> Builtins.run(ident, args)
+      SpecialForms.special_form?(ident, arg_len) -> SpecialForms.run(ident, args, locals)
+      Builtins.builtin?(ident, arg_len) -> Builtins.run(ident, args, locals)
       true -> raise Exceptions.UnknownFunctionError, message: "undefined function `#{ident}`"
     end
   end
 
-  def compute_expr(node), do: node
+  def compute_expr([head | tail], locals) do
+    {head_result, locals} = compute_expr(head, locals)
+
+    cond do
+      is_function(head_result) -> head_result.(tail)
+      is_atom(head_result) -> compute_expr([head_result | tail], locals)
+      true -> [head_result | compute_expr(tail, locals)]
+    end
+  end
+
+  def compute_expr(ident, locals) when is_atom(ident) do
+    found = Map.get(locals, ident, :__not_found)
+
+    if found === :__not_found do
+      raise Exceptions.UnknownLocalError, message: "unknown local `#{ident}`"
+    end
+
+    found
+  end
+
+  def compute_expr(node, _locals), do: node
 
   defp check_tokens(tokens) do
     {lcount, rcount} =
@@ -45,10 +68,10 @@ defmodule Lixp.Interpreter do
     # TODO: modify lexer to give column count, and enrich info here
     cond do
       parens_balance > 0 ->
-        raise Exceptions.UnbalancedParensError, message: "Missing one or more closing parentheses"
+        raise Exceptions.UnbalancedParensError, message: "missing one or more closing parentheses"
 
       parens_balance < 0 ->
-        raise Exceptions.UnbalancedParensError, message: "Missing one or more opening parentheses"
+        raise Exceptions.UnbalancedParensError, message: "missing one or more opening parentheses"
 
       true ->
         :ok

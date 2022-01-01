@@ -30,12 +30,13 @@ defmodule Lixp.Interpreter.Builtins do
   def builtin?(name, arity),
     do: {name, arity} in @supported || Keyword.get(@supported, name) == :infinity
 
-  def run(name, args) do
-    args = Enum.map(args, &compute_expr/1)
+  def run(name, args, locals) do
+    args = Enum.map(args, &compute_expr(&1, locals))
+
     is_variable = Keyword.get(@supported, name) == :infinity
     real_fn = Keyword.get(@mapping, name)
 
-    apply(__MODULE__, real_fn, if(is_variable, do: [args], else: args))
+    {apply(__MODULE__, real_fn, if(is_variable, do: [args], else: args)), locals}
   end
 
   def add(args) when is_list(args) do
