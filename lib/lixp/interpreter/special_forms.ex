@@ -7,6 +7,8 @@ defmodule Lixp.Interpreter.SpecialForms do
   @supported [
     quote: 1,
     lambda: 2,
+    def: 2,
+    defun: 3,
     let: 2,
     if: 2,
     if: 3,
@@ -17,6 +19,8 @@ defmodule Lixp.Interpreter.SpecialForms do
   @mapping [
     quote: :quote,
     lambda: :lambda,
+    def: :def_,
+    defun: :defun,
     let: :let,
     if: :if_,
     or: :or_,
@@ -35,9 +39,26 @@ defmodule Lixp.Interpreter.SpecialForms do
 
   def quote(arg, locals), do: {arg, locals}
 
-  def let(name, value, locals) do
+  def def_(name, value, locals) do
     value = compute_expr(value, locals, false)
     {value, Map.put(locals, name, value)}
+  end
+
+  # (let ((x (+ 2 2)) (y (- 5 2))) (+ x y))
+  def let(vars, expr, locals) do
+    # vars are (name value) pairs
+    vars =
+      Enum.map(vars, fn [name, value] ->
+        {name, compute_expr(value, locals, false)}
+      end)
+      |> Enum.into(locals)
+
+    {compute_expr(expr, vars, false), locals}
+  end
+
+  def defun(name, input_args, body, locals) do
+    {fun, _} = lambda(input_args, body, locals)
+    {fun, Map.put(locals, name, fun)}
   end
 
   def lambda(input_args, body, locals) do
