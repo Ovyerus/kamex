@@ -38,6 +38,8 @@ defmodule Kamex.Interpreter.Builtins do
     Enum.sum(args)
   end
 
+  def sub([x]), do: x * -1
+
   def sub(args) when is_list(args) do
     Enum.reduce(args, fn x, acc -> acc - x end)
   end
