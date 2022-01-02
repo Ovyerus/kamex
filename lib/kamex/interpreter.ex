@@ -29,14 +29,13 @@ defmodule Kamex.Interpreter do
 
   def compute_expr([ident | args], locals, ret_locals) when is_atom(ident) do
     # TODO: completely redo locals returning, and add globals alongside I think
-    arg_len = length(args)
 
     {result, locals} =
       cond do
-        SpecialForms.special_form?(ident, arg_len) ->
+        SpecialForms.special_form?(ident) ->
           SpecialForms.run(ident, args, locals)
 
-        Builtins.builtin?(ident, arg_len) ->
+        Builtins.builtin?(ident) ->
           Builtins.run(ident, args, locals)
 
         is_function(locals[ident]) ->
@@ -45,7 +44,7 @@ defmodule Kamex.Interpreter do
 
         true ->
           raise Exceptions.UnknownFunctionError,
-            message: "undefined function `#{ident}/#{arg_len}`"
+            message: "undefined function `#{ident}`"
       end
 
     if ret_locals,

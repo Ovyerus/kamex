@@ -4,19 +4,6 @@ defmodule Kamex.Interpreter.SpecialForms do
   import Kamex.Interpreter, only: [compute_expr: 2, compute_expr: 3]
   alias Kamex.Exceptions
 
-  @supported [
-    quote: 1,
-    lambda: 2,
-    def: 2,
-    defun: 3,
-    let: 2,
-    if: 2,
-    if: 3,
-    not: 1,
-    or: :infinity,
-    and: :infinity
-  ]
-
   @mapping [
     quote: :quote,
     lambda: :lambda,
@@ -29,25 +16,23 @@ defmodule Kamex.Interpreter.SpecialForms do
     and: :and_
   ]
 
-  def special_form?(name, arity),
-    do: {name, arity} in @supported || Keyword.get(@supported, name) == :infinity
+  def special_form?(name), do: Keyword.get(@mapping, name)
 
   def run(name, args, locals) do
-    is_variable = Keyword.get(@supported, name) == :infinity
     real_fn = Keyword.get(@mapping, name)
 
-    apply(__MODULE__, real_fn, if(is_variable, do: [args, locals], else: args ++ [locals]))
+    apply(__MODULE__, real_fn, [args, locals])
   end
 
-  def quote(arg, locals), do: {arg, locals}
+  def quote([arg], locals), do: {arg, locals}
 
-  def def_(name, value, locals) do
+  def def_([name, value], locals) do
     value = compute_expr(value, locals)
     {value, Map.put(locals, name, value)}
   end
 
   # (let ((x (+ 2 2)) (y (- 5 2))) (+ x y))
-  def let(vars, expr, locals) do
+  def let([vars, expr], locals) do
     # vars are (name value) pairs
     vars =
       Enum.map(vars, fn [name, value] ->
@@ -58,12 +43,12 @@ defmodule Kamex.Interpreter.SpecialForms do
     {compute_expr(expr, vars), locals}
   end
 
-  def defun(name, input_args, body, locals) do
-    {fun, _} = lambda(input_args, body, locals)
+  def defun([name, input_args, body], locals) do
+    {fun, _} = lambda([input_args, body], locals)
     {fun, Map.put(locals, name, fun)}
   end
 
-  def lambda(input_args, body, locals) do
+  def lambda([input_args, body], locals) do
     input_len = length(input_args)
 
     # TODO: should this get called with locals existing at the moment it gets called? or defined
@@ -87,7 +72,9 @@ defmodule Kamex.Interpreter.SpecialForms do
     {fun, locals}
   end
 
-  def if_(condition, block, else_block \\ nil, locals) do
+  def if_([condition, block | opt], locals) do
+    else_block = List.first(opt)
+
     result =
       if compute_expr(condition, locals) != [],
         do: compute_expr(block, locals),
@@ -96,7 +83,7 @@ defmodule Kamex.Interpreter.SpecialForms do
     {result, locals}
   end
 
-  def not_(value, locals) do
+  def not_([value], locals) do
     # TODO: move to true/false
     {if(value == [], do: true, else: []), locals}
   end
