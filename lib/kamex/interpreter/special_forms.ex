@@ -12,6 +12,7 @@ defmodule Kamex.Interpreter.SpecialForms do
     let: 2,
     if: 2,
     if: 3,
+    not: 1,
     or: :infinity,
     and: :infinity
   ]
@@ -23,6 +24,7 @@ defmodule Kamex.Interpreter.SpecialForms do
     defun: :defun,
     let: :let,
     if: :if_,
+    not: :not_,
     or: :or_,
     and: :and_
   ]
@@ -92,6 +94,11 @@ defmodule Kamex.Interpreter.SpecialForms do
         else: compute_expr(else_block, locals)
 
     {result, locals}
+  end
+
+  def not_(value, locals) do
+    # TODO: move to true/false
+    {if(value == [], do: true, else: []), locals}
   end
 
   # TODO: first-value/first-nil?

@@ -12,6 +12,8 @@ defmodule Kamex.Interpreter.Builtins do
     incf: 1,
     --: 1,
     decf: 1,
+    !: 1,
+    fac: 1,
     cons: 2,
     append: :infinity,
     list: :infinity,
@@ -32,6 +34,8 @@ defmodule Kamex.Interpreter.Builtins do
     incf: :incf,
     --: :decf,
     decf: :decf,
+    !: :fac,
+    fac: :fac,
     cons: :cons,
     append: :append,
     list: :list,
@@ -102,4 +106,10 @@ defmodule Kamex.Interpreter.Builtins do
 
   def zerop(term) when term == 0, do: true
   def zerop(_term), do: []
+
+  def fac(0), do: 1
+
+  def fac(num) when is_integer(num) do
+    num * fac(num - 1)
+  end
 end

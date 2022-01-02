@@ -13,11 +13,11 @@ but eventually plans to expand to be a Elixir implementation of the brilliant
 
 ## Builtins
 
-- +, -, \*, /, ++, --
+- +, -, \*, /, ++, --, !
 - list, cons, append, head, tail
 - print, zerop
 - quote, lambda, def (global vars), defun (global func), let (locals in a
-  block), if, or, and
+  block), if, or, and, not
 
 ## Examples
 
