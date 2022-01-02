@@ -40,7 +40,7 @@ defmodule Kamex.Interpreter.SpecialForms do
   def quote(arg, locals), do: {arg, locals}
 
   def def_(name, value, locals) do
-    value = compute_expr(value, locals, false)
+    value = compute_expr(value, locals)
     {value, Map.put(locals, name, value)}
   end
 
@@ -49,11 +49,11 @@ defmodule Kamex.Interpreter.SpecialForms do
     # vars are (name value) pairs
     vars =
       Enum.map(vars, fn [name, value] ->
-        {name, compute_expr(value, locals, false)}
+        {name, compute_expr(value, locals)}
       end)
       |> Enum.into(locals)
 
-    {compute_expr(expr, vars, false), locals}
+    {compute_expr(expr, vars), locals}
   end
 
   def defun(name, input_args, body, locals) do
@@ -79,7 +79,7 @@ defmodule Kamex.Interpreter.SpecialForms do
         |> Enum.zip(called_args)
         |> Enum.into(called_local)
 
-      compute_expr(body, lamb_locals, false)
+      compute_expr(body, lamb_locals)
     end
 
     {fun, locals}
@@ -87,7 +87,7 @@ defmodule Kamex.Interpreter.SpecialForms do
 
   def if_(condition, block, else_block \\ nil, locals) do
     result =
-      if compute_expr(condition, locals, false) != [],
+      if compute_expr(condition, locals) != [],
         do: compute_expr(block, locals),
         else: compute_expr(else_block, locals)
 
@@ -100,7 +100,7 @@ defmodule Kamex.Interpreter.SpecialForms do
     # {last, args} = List.pop_at(args, -1)
 
     args
-    |> Stream.map(fn node -> compute_expr(node, locals) end)
+    |> Stream.map(fn node -> compute_expr(node, locals, true) end)
     |> Enum.find(fn
       [] -> false
       _ -> true
@@ -116,7 +116,7 @@ defmodule Kamex.Interpreter.SpecialForms do
 
     # {result, locals} =
     args
-    |> Stream.map(fn node -> compute_expr(node, locals) end)
+    |> Stream.map(fn node -> compute_expr(node, locals, true) end)
     |> Enum.find(fn
       [] -> true
       _ -> false

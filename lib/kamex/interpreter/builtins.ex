@@ -1,7 +1,7 @@
 defmodule Kamex.Interpreter.Builtins do
   @moduledoc false
 
-  import Kamex.Interpreter, only: [compute_expr: 3]
+  import Kamex.Interpreter, only: [compute_expr: 2]
 
   @supported [
     +: :infinity,
@@ -47,7 +47,7 @@ defmodule Kamex.Interpreter.Builtins do
     do: {name, arity} in @supported || Keyword.get(@supported, name) == :infinity
 
   def run(name, args, locals) do
-    args = Enum.map(args, &compute_expr(&1, locals, false))
+    args = Enum.map(args, &compute_expr(&1, locals))
 
     is_variable = Keyword.get(@supported, name) == :infinity
     real_fn = Keyword.get(@mapping, name)
@@ -95,7 +95,10 @@ defmodule Kamex.Interpreter.Builtins do
 
   def tail([_ | tl]), do: tl
 
-  def print(str) when is_binary(str), do: IO.puts(str)
+  def print(str) when is_binary(str) do
+    IO.puts(str)
+    []
+  end
 
   def zerop(term) when term == 0, do: true
   def zerop(_term), do: []

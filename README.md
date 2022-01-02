@@ -8,10 +8,8 @@ but eventually plans to expand to be a Elixir implementation of the brilliant
 
 ## Known Issues
 
-- Recursive functions seem to hang, or at least
-  [a `factorial` implementation from Wikipedia](<https://en.wikipedia.org/wiki/Lisp_(programming_language)#Examples>)
-  does lmao
-- Probably a whole ton of other stuff, it's very early days for this.
+- Probably a whole ton of stuff, it's very early days for this. Please open an
+  issue if you notice weird behaviour.
 
 ## Builtins
 
@@ -46,7 +44,10 @@ iex> run(~S[
 ...>
 ...>   (factorial 10)
 ...> ])
-<program freezes lmao>
+{3628800,
+ %{
+   factorial: #Function<2.104658454/2 in Kamex.Interpreter.SpecialForms.lambda/3>
+ }}
 ```
 
 ## Using

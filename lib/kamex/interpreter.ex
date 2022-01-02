@@ -14,22 +14,21 @@ defmodule Kamex.Interpreter do
   end
 
   def run(input, locals \\ %{}) when is_binary(input) do
-    # TODO: add debug logs for lambdas and some stuff to figure out how stuff works
-
     {:ok, ast} = to_ast(input)
 
     Enum.reduce(
       ast,
       {nil, locals},
       fn node, {_, locals} ->
-        compute_expr(node, locals)
+        compute_expr(node, locals, true)
       end
     )
   end
 
-  def compute_expr(node, locals \\ %{}, ret_locals \\ true)
+  def compute_expr(node, locals \\ %{}, ret_locals \\ false)
 
   def compute_expr([ident | args], locals, ret_locals) when is_atom(ident) do
+    # TODO: completely redo locals returning, and add globals alongside I think
     arg_len = length(args)
 
     {result, locals} =
@@ -41,6 +40,7 @@ defmodule Kamex.Interpreter do
           Builtins.run(ident, args, locals)
 
         is_function(locals[ident]) ->
+          args = Enum.map(args, &compute_expr(&1, locals))
           {locals[ident].(args, locals), locals}
 
         true ->
@@ -54,12 +54,12 @@ defmodule Kamex.Interpreter do
   end
 
   def compute_expr([head | tail], locals, _ret_locals) do
-    {head_result, locals} = compute_expr(head, locals)
+    {head_result, locals} = compute_expr(head, locals, true)
 
     cond do
       is_function(head_result) -> head_result.(tail, locals)
-      is_atom(head_result) -> compute_expr([head_result | tail], locals)
-      true -> [head_result | compute_expr(tail, locals)]
+      is_atom(head_result) -> compute_expr([head_result | tail], locals, true)
+      true -> [head_result | compute_expr(tail, locals, true)]
     end
   end
 

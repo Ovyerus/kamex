@@ -8,8 +8,8 @@
       },
       color: true,
       checks: [
-        {Credo.Check.Refactor.Nesting, false},
-        {Credo.Check.Refactor.CyclomaticComplexity, false},
+        {Credo.Check.Refactor.Nesting},
+        {Credo.Check.Refactor.CyclomaticComplexity},
         {Credo.Check.Readability.LargeNumbers, only_greater_than: 99_999}
       ]
     }
