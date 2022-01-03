@@ -14,7 +14,8 @@ defmodule Kamex.Interpreter.SpecialForms do
     not: :not_,
     or: :or_,
     and: :and_,
-    atop: :atop
+    atop: :atop,
+    fork: :fork
   ]
 
   def special_form?(name), do: Keyword.get(@mapping, name)
@@ -127,4 +128,13 @@ defmodule Kamex.Interpreter.SpecialForms do
 
   defp atop_compose([final]), do: [final, :"$1"]
   defp atop_compose([head | tail]), do: [head, atop_compose(tail)]
+
+  def fork([to_call | args], locals) do
+    nodes = [to_call | Enum.map(args, &atop_compose([&1]))]
+
+    # TODO: does this work with multiple args? If so will need to implement variadic lambdas
+    lambda([[:"$1"], nodes], locals)
+  end
 end
+
+# (#(tie + -) 3) = (tie (+ 3) (- 3)) = '(3 -3)
