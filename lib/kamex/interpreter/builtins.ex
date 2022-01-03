@@ -21,7 +21,7 @@ defmodule Kamex.Interpreter.Builtins do
     tail: :tail,
     car: :head,
     cdr: :tail,
-    print: :print,
+    println: :println,
     zerop: :zerop
   ]
 

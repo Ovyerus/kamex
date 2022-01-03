@@ -1,6 +1,6 @@
 Rootsymbol group.
 Nonterminals list elems elem group.
-Terminals '(' ')' int float ident string nil quot.
+Terminals '(' ')' int float ident string nil quot atop.
 
 group -> list       : ['$1'].
 group -> list group : ['$1' | '$2'].
@@ -14,6 +14,7 @@ elems -> elem elems : ['$1' | '$2'].
 
 elem -> quot list : [quote, '$2'].
 elem -> quot ident : [quote, extract_token('$2')].
+elem -> atop       : [atop | extract_token('$1')].
 elem -> int        : extract_token('$1').
 elem -> float      : extract_token('$1').
 elem -> string     : extract_token('$1').

@@ -13,7 +13,8 @@ defmodule Kamex.Interpreter.SpecialForms do
     if: :if_,
     not: :not_,
     or: :or_,
-    and: :and_
+    and: :and_,
+    atop: :atop
   ]
 
   def special_form?(name), do: Keyword.get(@mapping, name)
@@ -51,7 +52,6 @@ defmodule Kamex.Interpreter.SpecialForms do
   def lambda([input_args, body], locals) do
     input_len = length(input_args)
 
-    # TODO: should this get called with locals existing at the moment it gets called? or defined
     fun = fn called_args, called_local ->
       called_args_len = length(called_args)
 
@@ -118,4 +118,13 @@ defmodule Kamex.Interpreter.SpecialForms do
 
     # {result, locals}
   end
+
+  def atop(funs, locals) do
+    nodes = atop_compose(funs)
+
+    lambda([[:"$1"], nodes], locals)
+  end
+
+  defp atop_compose([final]), do: [final, :"$1"]
+  defp atop_compose([head | tail]), do: [head, atop_compose(tail)]
 end
