@@ -13,6 +13,7 @@ defmodule Kamex.Interpreter.Builtins do
     -: :sub,
     *: :mul,
     /: :div,
+    %: :mod,
     ++: :incf,
     incf: :incf,
     --: :decf,
@@ -51,6 +52,7 @@ defmodule Kamex.Interpreter.Builtins do
 
   def div([a, b]), do: a / b
   def mul([a, b]), do: a * b
+  def mod([a, b]), do: rem(a, b)
 
   def incf([num]) when is_integer(num) or is_float(num), do: num + 1
   def decf([num]) when is_integer(num) or is_float(num), do: num - 1
