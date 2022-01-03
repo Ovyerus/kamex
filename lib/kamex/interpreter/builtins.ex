@@ -25,7 +25,9 @@ defmodule Kamex.Interpreter.Builtins do
     tail: :tail,
     car: :head,
     cdr: :tail,
-    println: :println
+    println: :println,
+    tack: :tack,
+    reverse: :reverse
   ]
 
   def builtin?(name), do: Keyword.get(@mapping, name)
@@ -96,4 +98,11 @@ defmodule Kamex.Interpreter.Builtins do
   def fac([num]) when is_integer(num) do
     num * fac([num - 1])
   end
+
+  def tack([nth]) do
+    fn args_to_pick, _locals -> Enum.at(args_to_pick, nth) end
+  end
+
+  def reverse([str]) when is_binary(str), do: String.reverse(str)
+  def reverse([list]) when is_list(list), do: Enum.reverse(list)
 end

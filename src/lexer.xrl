@@ -16,6 +16,7 @@ nil : {token, {nil, TokenLine}}.
 \(  : {token, {'(',  TokenLine}}.
 \)  : {token, {')',  TokenLine}}.
 
+#{Digit}+                        : {token, {tack, TokenLine, tack_to_int(TokenChars)}}.
 #                                : {token, {fork, TokenLine}}.
 {Int}\.{Digit}+                  : {token, {float, TokenLine, list_to_float(TokenChars)}}.
 {Int}                            : {token, {int, TokenLine, list_to_integer(TokenChars)}}.
@@ -28,6 +29,8 @@ nil : {token, {nil, TokenLine}}.
 Erlang code.
 
 clean_str(Str) when is_list(Str) -> string:trim(Str, both, "\"").
+tack_to_int([$# | Num]) -> list_to_integer(Num).
+
 atop_to_idents(Atop) when is_list(Atop) ->
   Tokens = string:tokens(Atop, "@"),
   lists:map(fun(T) -> list_to_atom(T) end, Tokens).

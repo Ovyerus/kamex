@@ -1,6 +1,6 @@
 Rootsymbol group.
 Nonterminals list elems elem group.
-Terminals '(' ')' int float ident string nil quot atop fork.
+Terminals '(' ')' int float ident string nil quot atop fork tack.
 
 group -> list       : ['$1'].
 group -> list group : ['$1' | '$2'].
@@ -17,6 +17,7 @@ elem -> quot list  : [quote, '$2'].
 elem -> quot ident : [quote, extract_token('$2')].
 elem -> atop       : [atop | extract_token('$1')].
 elem -> fork list  : [fork | '$2'].
+elem -> tack       : [tack | [extract_token('$1')]].
 elem -> int        : extract_token('$1').
 elem -> float      : extract_token('$1').
 elem -> string     : extract_token('$1').
