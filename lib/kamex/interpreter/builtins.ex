@@ -2,6 +2,7 @@ defmodule Kamex.Interpreter.Builtins do
   @moduledoc false
 
   import Kamex.Interpreter, only: [compute_expr: 2]
+  alias Kamex.Exceptions
 
   @tru 1
   @fals 0
@@ -43,41 +44,24 @@ defmodule Kamex.Interpreter.Builtins do
     if a == b, do: @tru, else: @fals
   end
 
-  def add(args) when is_list(args) do
-    Enum.sum(args)
-  end
+  def add([a, b]), do: a + b
 
   def sub([x]), do: x * -1
+  def sub([a, b]), do: a - b
 
-  def sub(args) when is_list(args) do
-    Enum.reduce(args, fn x, acc -> acc - x end)
-  end
+  def div([a, b]), do: a / b
+  def mul([a, b]), do: a * b
 
-  def div(args) when is_list(args) do
-    Enum.reduce(args, fn x, acc -> acc / x end)
-  end
+  def incf([num]) when is_integer(num) or is_float(num), do: num + 1
+  def decf([num]) when is_integer(num) or is_float(num), do: num - 1
 
-  def mul(args) when is_list(args) do
-    Enum.reduce(args, fn x, acc -> acc * x end)
-  end
+  def cons([head, tail]) when is_list(tail), do: [head | tail]
 
-  def incf([num]) when is_integer(num) or is_float(num) do
-    num + 1
-  end
-
-  def decf([num]) when is_integer(num) or is_float(num) do
-    num - 1
-  end
-
-  # TODO: better error for non-list tail
-  def cons([head, tail]) when is_list(tail) do
-    [head | tail]
-  end
+  def cons([_head, _tail]),
+    do: raise(Exceptions.IllegalTypeError, message: "cannot `cons` non-list tail")
 
   # TODO: better error for when first arg is non list/check to make sure all items is a list (how without iterating through all items?)
-  def append(lists) do
-    Enum.reduce(lists, [], fn x, acc -> acc ++ x end)
-  end
+  def append(lists), do: Enum.reduce(lists, [], fn x, acc -> acc ++ x end)
 
   def list(args), do: args
 
@@ -95,9 +79,7 @@ defmodule Kamex.Interpreter.Builtins do
 
   def fac([0]), do: 1
 
-  def fac([num]) when is_integer(num) do
-    num * fac([num - 1])
-  end
+  def fac([num]) when is_integer(num), do: num * fac([num - 1])
 
   def tack([nth]) do
     fn args_to_pick, _locals -> Enum.at(args_to_pick, nth) end

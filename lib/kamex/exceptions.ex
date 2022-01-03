@@ -16,4 +16,8 @@ defmodule Kamex.Exceptions do
   defmodule UnbalancedParensError do
     defexception [:message]
   end
+
+  defmodule IllegalTypeError do
+    defexception [:message]
+  end
 end
