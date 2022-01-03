@@ -5,6 +5,7 @@ Terminals '(' ')' int float ident string nil quot atop fork.
 group -> list       : ['$1'].
 group -> list group : ['$1' | '$2'].
 
+% TODO: maybe disallow literal () as empty list since original impl doesn't.
 list -> nil           : [].
 list -> '(' ')'       : [].
 list -> '(' elems ')' : '$2'.

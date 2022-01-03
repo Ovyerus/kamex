@@ -3,7 +3,11 @@ defmodule Kamex.Interpreter.Builtins do
 
   import Kamex.Interpreter, only: [compute_expr: 2]
 
+  @tru 1
+  @fals 0
+
   @mapping [
+    =: :eq,
     +: :add,
     -: :sub,
     *: :mul,
@@ -21,8 +25,7 @@ defmodule Kamex.Interpreter.Builtins do
     tail: :tail,
     car: :head,
     cdr: :tail,
-    println: :println,
-    zerop: :zerop
+    println: :println
   ]
 
   def builtin?(name), do: Keyword.get(@mapping, name)
@@ -32,6 +35,10 @@ defmodule Kamex.Interpreter.Builtins do
     real_fn = Keyword.get(@mapping, name)
 
     {apply(__MODULE__, real_fn, [args]), locals}
+  end
+
+  def eq([a, b]) do
+    if a == b, do: @tru, else: @fals
   end
 
   def add(args) when is_list(args) do

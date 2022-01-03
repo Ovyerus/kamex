@@ -4,6 +4,10 @@ defmodule Kamex.Interpreter.SpecialForms do
   import Kamex.Interpreter, only: [compute_expr: 2, compute_expr: 3]
   alias Kamex.Exceptions
 
+  @tru 1
+  @fals 0
+  @falsey [[], @fals]
+
   @mapping [
     quote: :quote,
     lambda: :lambda,
@@ -77,47 +81,35 @@ defmodule Kamex.Interpreter.SpecialForms do
     else_block = List.first(opt)
 
     result =
-      if compute_expr(condition, locals) != [],
-        do: compute_expr(block, locals),
-        else: compute_expr(else_block, locals)
+      if compute_expr(condition, locals) in @falsey,
+        do: compute_expr(else_block, locals),
+        else: compute_expr(block, locals)
 
     {result, locals}
   end
 
   def not_([value], locals) do
-    # TODO: move to true/false
-    {if(value == [], do: true, else: []), locals}
+    {if(value in @falsey, do: @tru, else: @fals), locals}
   end
 
   # TODO: first-value/first-nil?
 
   def or_(args, locals) do
-    # {last, args} = List.pop_at(args, -1)
-
     args
     |> Stream.map(fn node -> compute_expr(node, locals, true) end)
     |> Enum.find(fn
-      [] -> false
+      {x, _} when x in @falsey -> false
       _ -> true
-    end) || {[], locals}
-
-    # {result, locals}
-
-    # end) || compute_expr(last)
+    end) || {@fals, locals}
   end
 
   def and_(args, locals) do
-    {last, args} = List.pop_at(args, -1)
-
-    # {result, locals} =
     args
     |> Stream.map(fn node -> compute_expr(node, locals, true) end)
     |> Enum.find(fn
-      [] -> true
+      {x, _} when x in @falsey -> true
       _ -> false
-    end) || compute_expr(last, locals)
-
-    # {result, locals}
+    end) || {@tru, locals}
   end
 
   def atop(funs, locals) do
@@ -129,6 +121,7 @@ defmodule Kamex.Interpreter.SpecialForms do
   defp atop_compose([final]), do: [final, :"$1"]
   defp atop_compose([head | tail]), do: [head, atop_compose(tail)]
 
+  @spec fork(nonempty_maybe_improper_list, any) :: {(list, any -> any), any}
   def fork([to_call | args], locals) do
     nodes = [to_call | Enum.map(args, &atop_compose([&1]))]
 

@@ -72,6 +72,7 @@ defmodule Kamex.Interpreter do
     found
   end
 
+  def compute_expr(node, locals, true), do: {node, locals}
   def compute_expr(node, _locals, _ret_locals), do: node
 
   defp check_tokens(tokens) do
