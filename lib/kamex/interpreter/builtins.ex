@@ -29,6 +29,7 @@ defmodule Kamex.Interpreter.Builtins do
     cdr: :tail,
     println: :println,
     tack: :tack,
+    nth: :nth,
     reverse: :reverse
   ]
 
@@ -85,6 +86,10 @@ defmodule Kamex.Interpreter.Builtins do
 
   def tack([nth]) do
     fn args_to_pick, _locals -> Enum.at(args_to_pick, nth) end
+  end
+
+  def nth([n, args]) do
+    Enum.at(args, n)
   end
 
   def reverse([str]) when is_binary(str), do: String.reverse(str)

@@ -129,11 +129,6 @@ defmodule Kamex.Interpreter.SpecialForms do
     lambda([[:"$1"], nodes], locals)
   end
 
-  # TODO: debug tacking with this
-  # (def foobar $(list (- _) (+ _ _) (% _ 2) $(* _ -1)))
-  # (#3 (foobar 1 2 3 4))
-  # -> nil
-
   def bind([fun | args], locals) do
     # Replace all occurances of :_ with a incrementally numbered argument :"$1",
     # :"$2", etc. Must not intrude into other `bind` calls, and if none
