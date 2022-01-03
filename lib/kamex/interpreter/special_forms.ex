@@ -19,7 +19,8 @@ defmodule Kamex.Interpreter.SpecialForms do
     or: :or_,
     and: :and_,
     atop: :atop,
-    fork: :fork
+    fork: :fork,
+    bind: :bind
   ]
 
   def special_form?(name), do: Keyword.get(@mapping, name)
@@ -121,13 +122,48 @@ defmodule Kamex.Interpreter.SpecialForms do
   defp atop_compose([final]), do: [final, :"$1"]
   defp atop_compose([head | tail]), do: [head, atop_compose(tail)]
 
-  @spec fork(nonempty_maybe_improper_list, any) :: {(list, any -> any), any}
   def fork([to_call | args], locals) do
     nodes = [to_call | Enum.map(args, &atop_compose([&1]))]
 
     # TODO: does this work with multiple args? If so will need to implement variadic lambdas
     lambda([[:"$1"], nodes], locals)
   end
-end
 
-# (#(tie + -) 3) = (tie (+ 3) (- 3)) = '(3 -3)
+  # TODO: debug tacking with this
+  # (def foobar $(list (- _) (+ _ _) (% _ 2) $(* _ -1)))
+  # (#3 (foobar 1 2 3 4))
+  # -> nil
+
+  def bind([fun | args], locals) do
+    # Replace all occurances of :_ with a incrementally numbered argument :"$1",
+    # :"$2", etc. Must not intrude into other `bind` calls, and if none
+    # detected, just append new args to root function
+    #
+    # This functions a bit differently from og KamilaLisp, wheras they only
+    # occurances of `:_` on the top level, we allow nested ones in other functions.
+    {args, count} = bind_compose(args)
+    lambda_args = Enum.map(1..(count - 1), fn i -> :"$#{i}" end)
+
+    lambda([lambda_args, [fun | args]], locals)
+  end
+
+  defp bind_compose(item, count \\ 1)
+  defp bind_compose(:_, count), do: {:"$#{count}", count + 1}
+  defp bind_compose(x, count) when not is_list(x), do: {x, count}
+
+  defp bind_compose([key | _] = item, count) when key in [:bind, :quote, :let, :lambda],
+    do: {item, count}
+
+  defp bind_compose(items, count) do
+    {items, count} =
+      Enum.reduce(items, {[], count}, fn item, {all, count} ->
+        {item, count} = bind_compose(item, count)
+        {all ++ [item], count}
+      end)
+
+    if count == 1,
+      # Implicitly add placeholder to the end, if there aren't any placeholders.
+      do: {items ++ [:"$1"], count + 1},
+      else: {items, count}
+  end
+end

@@ -2,7 +2,7 @@ Definitions.
 
 Digit             = [0-9]
 Int              = -?{Digit}+
-IdentStartChar   = [^'"\s\r\n\t\f\(\)\[\],@#]
+IdentStartChar   = [^'"\s\r\n\t\f\(\)\[\],@#$]
 % '
 IdentChar        = [^'"\s\r\n\t\f\(\)\[\],@]
 % '
@@ -18,6 +18,7 @@ nil : {token, {nil, TokenLine}}.
 
 #{Digit}+                        : {token, {tack, TokenLine, tack_to_int(TokenChars)}}.
 #                                : {token, {fork, TokenLine}}.
+\$                               : {token, {bind, TokenLine}}.
 {Int}\.{Digit}+                  : {token, {float, TokenLine, list_to_float(TokenChars)}}.
 {Int}                            : {token, {int, TokenLine, list_to_integer(TokenChars)}}.
 "(\\.|\r?\n|[^\\\n\"])*"         : {token, {string, TokenLine, list_to_binary(clean_str(TokenChars))}}.
