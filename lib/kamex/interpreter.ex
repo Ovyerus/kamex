@@ -56,7 +56,7 @@ defmodule Kamex.Interpreter do
     {head_result, locals} = compute_expr(head, locals, true)
 
     cond do
-      is_function(head_result) -> head_result.(tail, locals)
+      is_function(head_result) -> head_result.(Enum.map(tail, &compute_expr(&1, locals)), locals)
       is_atom(head_result) -> compute_expr([head_result | tail], locals, true)
       true -> [head_result | compute_expr(tail, locals, true)]
     end
