@@ -21,7 +21,8 @@ defmodule Kamex.Interpreter.Builtins do
     %: :mod,
     fac: :fac,
     map: :map,
-    filter: :filter
+    filter: :filter,
+    count: :count
     # ++: :incf,
     # incf: :incf,
     # --: :decf,
@@ -85,6 +86,8 @@ defmodule Kamex.Interpreter.Builtins do
   def filter([fun, list], locals),
     # Compare against 0 so that we don't have to do a second `not` check for `1`.
     do: Enum.filter(list, fn real -> not_([compute_expr([fun, real], locals)], nil) == 0 end)
+
+  def count([fun, list], locals), do: Enum.count(filter([fun, list], locals))
 
   # def incf([num]) when is_integer(num) or is_float(num), do: num + 1
   # def decf([num]) when is_integer(num) or is_float(num), do: num - 1
