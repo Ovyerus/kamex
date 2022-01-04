@@ -58,6 +58,7 @@ defmodule Kamex.Interpreter.Builtins do
 
   def eq([a, b], _), do: if(a == b, do: @tru, else: @fals)
 
+  def add([a, b], _) when is_binary(a) and is_binary(b), do: a <> b
   def add([a, b], _), do: a + b
 
   def sub([x], _), do: x * -1
