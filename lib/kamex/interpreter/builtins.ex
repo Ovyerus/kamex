@@ -2,18 +2,21 @@ defmodule Kamex.Interpreter.Builtins do
   @moduledoc false
 
   import Kamex.Interpreter, only: [compute_expr: 2]
-  alias Kamex.Exceptions
+  # alias Kamex.Exceptions
+  require __MODULE__.Lists
+  alias __MODULE__.Lists
 
   @tru 1
   @fals 0
   @falsey [[], @fals]
 
-  @mapping [
+  @supported [
     println: :println,
     tack: :tack,
     nth: :nth,
     not: :not_,
     =: :eq,
+    "\\=": :neq,
     +: :add,
     -: :sub,
     *: :mul,
@@ -26,28 +29,28 @@ defmodule Kamex.Interpreter.Builtins do
     every: :every,
     "flat-map": :flat_map,
     id: :id
-    # ++: :incf,
-    # incf: :incf,
-    # --: :decf,
-    # decf: :decf,
-    # !: :fac,
-    # cons: :cons,
-    # append: :append,
-    # list: :list,
-    # head: :head,
-    # tail: :tail,
-    # car: :head,
-    # cdr: :tail,
-    # reverse: :reverse
   ]
 
-  def builtin?(name), do: Keyword.get(@mapping, name)
+  defmacro mapping do
+    map_supported_to_mod = fn mod, {call_name, fn_name} -> {call_name, {fn_name, mod}} end
+
+    items =
+      Enum.map(@supported, &map_supported_to_mod.(__MODULE__, &1)) ++
+        Enum.map(Lists.supported(), &map_supported_to_mod.(Lists, &1))
+
+    quote do
+      unquote(items)
+    end
+  end
+
+  def builtin?(name), do: Keyword.get(mapping(), name)
+  def test(), do: mapping()
 
   def run(name, args, locals) do
     args = Enum.map(args, &compute_expr(&1, locals))
-    real_fn = Keyword.get(@mapping, name)
+    {real_fn, mod} = Keyword.get(mapping(), name)
 
-    {apply(__MODULE__, real_fn, [args, locals]), locals}
+    {apply(mod, real_fn, [args, locals]), locals}
   end
 
   # ---------------------------------------------------------------------------
@@ -68,6 +71,7 @@ defmodule Kamex.Interpreter.Builtins do
   def not_([_], _), do: @fals
 
   def eq([a, b], _), do: if(a == b, do: @tru, else: @fals)
+  def neq([a, b], _), do: if(a == b, do: @fals, else: @tru)
 
   def add([a, b], _) when is_binary(a) and is_binary(b), do: a <> b
   def add([a, b], _), do: a + b
@@ -102,24 +106,4 @@ defmodule Kamex.Interpreter.Builtins do
   def flat_map([fun, args], locals), do: Enum.flat_map(args, &compute_expr([fun, &1], locals))
 
   def id([x], _), do: x
-
-  # def incf([num]) when is_integer(num) or is_float(num), do: num + 1
-  # def decf([num]) when is_integer(num) or is_float(num), do: num - 1
-
-  # def cons([head, tail]) when is_list(tail), do: [head | tail]
-
-  # def cons([_head, _tail]),
-  #   do: raise(Exceptions.IllegalTypeError, message: "cannot `cons` non-list tail")
-
-  # # TOO: better error for when first arg is non list/check to make sure all items is a list (how without iterating through all items?)
-  # def append(lists), do: Enum.reduce(lists, [], fn x, acc -> acc ++ x end)
-
-  # def list(args, _), do: args
-
-  # def head([[hd | _]]), do: hd
-
-  # def tail([[_ | tl]]), do: tl
-
-  # def reverse([str]) when is_binary(str), do: String.reverse(str)
-  # def reverse([list]) when is_list(list), do: Enum.reverse(list)
 end
