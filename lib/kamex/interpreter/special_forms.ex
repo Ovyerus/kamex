@@ -16,7 +16,6 @@ defmodule Kamex.Interpreter.SpecialForms do
     let: :let,
     "let-seq": :let_seq,
     if: :if_,
-    not: :not_,
     or: :or_,
     and: :and_,
     atop: :atop,
@@ -112,10 +111,6 @@ defmodule Kamex.Interpreter.SpecialForms do
         else: compute_expr(block, locals)
 
     {result, locals}
-  end
-
-  def not_([value], locals) do
-    {if(value in @falsey, do: @tru, else: @fals), locals}
   end
 
   # TODO: first-value/first-nil?
