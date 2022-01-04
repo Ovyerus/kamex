@@ -24,6 +24,7 @@ defmodule Kamex.Interpreter.Builtins do
     filter: :filter,
     count: :count,
     every: :every,
+    "flat-map": :flat_map,
     id: :id
     # ++: :incf,
     # incf: :incf,
@@ -98,6 +99,8 @@ defmodule Kamex.Interpreter.Builtins do
         else: @fals
       )
 
+  def flat_map([fun, args], locals), do: Enum.flat_map(args, &compute_expr([fun, &1], locals))
+
   def id([x], _), do: x
 
   # def incf([num]) when is_integer(num) or is_float(num), do: num + 1
@@ -111,7 +114,7 @@ defmodule Kamex.Interpreter.Builtins do
   # # TOO: better error for when first arg is non list/check to make sure all items is a list (how without iterating through all items?)
   # def append(lists), do: Enum.reduce(lists, [], fn x, acc -> acc ++ x end)
 
-  # def list(args), do: args
+  # def list(args, _), do: args
 
   # def head([[hd | _]]), do: hd
 
