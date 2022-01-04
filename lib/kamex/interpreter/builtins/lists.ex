@@ -23,6 +23,8 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         any: :any,
         "grade-up": :grade_up,
         "grade-down": :grade_down,
+        index: :index,
+        at: :at,
         unique: :unique,
         shuffle: :shuffle
       ]
@@ -101,10 +103,9 @@ defmodule Kamex.Interpreter.Builtins.Lists do
     do:
       Enum.any?(list, fn item -> Builtins.not_([compute_expr([fun, item], locals)], nil) == 0 end)
 
-  # TODO: sort, index, grade-up, grade-down, at?
-  # grade-down/up return indices in order that you follow for array to be sorted
+  # TODO: sort
 
-  # TODO: support fn as first
+  # Return a list of indicies which when followed, result in a sorted list.
   def grade_up([list], _) when is_list(list),
     do:
       list
@@ -112,7 +113,46 @@ defmodule Kamex.Interpreter.Builtins.Lists do
       |> Enum.sort(fn {x, _}, {y, _} -> x < y end)
       |> Enum.map(&elem(&1, 1))
 
+  def grade_up([fun, list], locals) when is_list(list),
+    do:
+      list
+      |> Enum.with_index()
+      |> Enum.sort(fn {x, _}, {y, _} ->
+        Builtins.not_([compute_expr([fun, x, y], locals)], nil) == 0
+      end)
+      |> Enum.map(&elem(&1, 1))
+
   def grade_down([list], _) when is_list(list), do: grade_up([list], nil) |> Enum.reverse()
+
+  def grade_down([fun, list], locals) when is_list(list),
+    do: grade_up([fun, list], locals) |> Enum.reverse()
+
+  def index([indices, list], _) when is_list(indices) and is_list(list),
+    # TODO: handle out of bound indices?
+    do: Enum.map(indices, fn i -> Enum.at(list, i) end)
+
+  # '*'@(2∘|) 1 2 3 4 5
+  # * 2 * 4 *
+  def at([transform, indices, list], locals) when is_list(indices) and is_list(list),
+    # TODO: check list is all numbers
+    do:
+      list
+      |> Enum.with_index()
+      |> Enum.map(fn {item, i} ->
+        if i in indices,
+          do: compute_expr([transform, item], locals),
+          else: item
+      end)
+
+  def at([transform, pred, list], locals) when is_list(list),
+    do:
+      Enum.map(list, fn item ->
+        pick_it = Builtins.not_([compute_expr([pred, item], locals)], nil) == 0
+
+        if pick_it,
+          do: compute_expr([transform, item], locals),
+          else: item
+      end)
 
   def unique([str], _) when is_binary(str),
     do: str |> String.graphemes() |> Enum.uniq() |> Enum.join()
