@@ -14,6 +14,7 @@ defmodule Kamex.Interpreter.SpecialForms do
     def: :def_,
     defun: :defun,
     let: :let,
+    "let-seq": :let_seq,
     if: :if_,
     not: :not_,
     or: :or_,
@@ -48,6 +49,30 @@ defmodule Kamex.Interpreter.SpecialForms do
       |> Enum.into(locals)
 
     {compute_expr(expr, vars), locals}
+  end
+
+  def let_seq(args, og_locals) do
+    # Sequenced, scoped operations.
+    # (let-seq
+    #   (def x 3)
+    #   (defun add3 (y) (+ x y))
+    #   (add3 2))
+    # Evaluates all `def` and `defun` calls and adds to locals, and computes and returns the first non-definer.
+    # If only consists of `def` and `defun`, returns null
+
+    {return, _} =
+      Enum.reduce_while(args, {nil, og_locals}, fn node, {_, locals} ->
+        case node do
+          [name | _] = expr when name in [:def, :defun] ->
+            {_, new_locals} = compute_expr(expr, locals, true)
+            {:cont, {nil, new_locals}}
+
+          expr ->
+            {:halt, {compute_expr(expr, locals), locals}}
+        end
+      end)
+
+    {return, og_locals}
   end
 
   def defun([name, input_args, body], locals) do
