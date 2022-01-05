@@ -4,6 +4,9 @@ defmodule Kamex.Interpreter.Builtins.Lists do
   import Kamex.Interpreter, only: [compute_expr: 2]
   alias Kamex.{Exceptions, Interpreter.Builtins, Util.Comb}
 
+  @tru 1
+  @fals 0
+
   defmacro supported do
     quote do
       [
@@ -19,6 +22,8 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         append: :append,
         car: :car,
         cdr: :cdr,
+        cadr: :cadr,
+        "str-split": :str_split,
         size: :size,
         any: :any,
         "grade-up": :grade_up,
@@ -32,6 +37,10 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         prefixes: :prefixes,
         suffixes: :suffixes,
         window: :window,
+        range: :range,
+        "starts-with": :starts_with,
+        "index-of": :index_of,
+        in?: :in?,
         shuffle: :shuffle
       ]
     end
@@ -98,6 +107,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
 
   def car([[head | _]], _), do: head
   def cdr([[_ | tail]], _), do: tail
+  def cadr([[_, head2 | _]], _), do: head2
 
   def str_spilt([str, delim], _) when is_binary(str) and is_binary(delim),
     do: String.split(str, delim)
@@ -198,6 +208,11 @@ defmodule Kamex.Interpreter.Builtins.Lists do
 
   def intersperse([l, r], _), do: Enum.zip(l, r) |> Enum.flat_map(fn {x, y} -> [x, y] end)
 
+  # unique-mask is a bit annoying
+  # basically
+  # you have to find the first occurence of each element in the list
+  # and then mark it with a 1
+
   # (,¨,\)'example'
   # ┌─┬──┬───┬────┬─────┬──────┬───────┐
   # │e│ex│exa│exam│examp│exampl│example│
@@ -243,5 +258,36 @@ defmodule Kamex.Interpreter.Builtins.Lists do
     rest |> Enum.scan(start, &(Enum.slice(&2, -size_decf, size) ++ [&1]))
   end
 
+  # TODO: inner/outer-prod
+
+  # is this inclusive?
+  def range([start, stop], _) when is_integer(start) and is_integer(stop), do: start..stop
+
+  def starts_with([prefix, string], _) when is_binary(string) and is_binary(prefix),
+    do: if(String.starts_with?(string, prefix), do: @tru, else: @fals)
+
+  def starts_with([prefix, list], _) when is_list(list) and is_list(prefix),
+    do: if(List.starts_with?(list, prefix), do: @tru, else: @fals)
+
+  # TODO: keys
+
+  def index_of([to_check, str], _) when is_binary(to_check) and is_binary(str),
+    do: index_of([String.graphemes(to_check), String.graphemes(str)], nil)
+
+  def index_of([to_check, list], _) when is_list(to_check) and is_list(list),
+    do: Enum.map(to_check, fn x -> Enum.find_index(list, x) end)
+
+  # ucs - turn unicode chars to ints and vice versa
+
+  def in?([contents, container]) when is_binary(contents) and is_binary(container),
+    do: if(String.contains?(container, contents), do: @tru, else: @fals)
+
+  def in?([contents, container]) when is_list(container),
+    do: if(contents in container, do: @tru, else: @fals)
+
+  # find-seq
+
   def shuffle([list], _) when is_list(list), do: Enum.shuffle(list)
+
+  # str-explode, str-join
 end

@@ -23,6 +23,7 @@ nil : {token, {nil, TokenLine}}.
 {Int}                            : {token, {int, TokenLine, list_to_integer(TokenChars)}}.
 "(\\.|\r?\n|[^\\\n\"])*"         : {token, {string, TokenLine, list_to_binary(clean_str(TokenChars))}}.
 '                                : {token, {quot, TokenLine}}. % '
+% TODO: fix to allow partial applied functions beforehand
 ({FullIdent}(@{FullIdent})+)     : {token, {atop, TokenLine, atop_to_idents(TokenChars)}}.
 {FullIdent}+                     : {token, {ident, TokenLine, list_to_atom(TokenChars)}}.
 {Whitespace}+                    : skip_token.

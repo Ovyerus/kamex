@@ -15,10 +15,12 @@ elems -> elem elems : ['$1' | '$2'].
 
 elem -> quot list  : [quote, '$2'].
 elem -> quot ident : [quote, extract_token('$2')].
-elem -> atop       : [atop | extract_token('$1')].
 elem -> fork list  : [fork | '$2'].
 elem -> bind list  : [bind | '$2'].
+% map
+% partition
 elem -> tack       : [tack | [extract_token('$1')]].
+elem -> atop       : [atop | extract_token('$1')].
 elem -> int        : extract_token('$1').
 elem -> float      : extract_token('$1').
 elem -> string     : extract_token('$1').
