@@ -26,6 +26,8 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         index: :index,
         at: :at,
         unique: :unique,
+        where: :where,
+        replicate: :replicate,
         shuffle: :shuffle
       ]
     end
@@ -160,7 +162,35 @@ defmodule Kamex.Interpreter.Builtins.Lists do
   def unique([list], _) when is_list(list), do: Enum.uniq(list)
 
   # where: indicies of true items in a bool vector, > 1 returns indice n times
-  # replicate: apply a bool vector mask to an list
+  # ⍸1 0 1 0 3 1
+  # 1 3 5 5 5 6
+  def where([vector], _),
+    do:
+      vector
+      |> Stream.with_index()
+      |> Stream.map(fn {x, i} ->
+        case x do
+          0 -> 0
+          1 -> i
+          _ -> List.duplicate(i, x)
+        end
+      end)
+      |> Enum.into([])
+      |> List.flatten()
+
+  # replicate: apply a bool vector mask to an list, repeat like `where` if > 1
+  # 0 1 0 1/2 3 4 5
+  # 3 5
+  def replicate([times, list], _) when is_integer(times) and is_list(list),
+    do: replicate([List.duplicate(times, length(list)), list], nil)
+
+  def replicate([mask, list], _) when is_list(mask) and is_list(list),
+    do:
+      Enum.zip(mask, list)
+      |> Enum.filter(fn {m, _} -> m != 0 end)
+      |> Enum.map(fn {times, item} -> List.duplicate(item, times) end)
+      |> Enum.into([])
+      |> List.flatten()
 
   def shuffle([list], _) when is_list(list), do: Enum.shuffle(list)
 end
