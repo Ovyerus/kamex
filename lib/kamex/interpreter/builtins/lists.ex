@@ -33,7 +33,9 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         unique: :unique,
         where: :where,
         replicate: :replicate,
+        drop: :drop,
         intersperse: :intersperse,
+        "unique-mask": :unique_mask,
         prefixes: :prefixes,
         suffixes: :suffixes,
         window: :window,
@@ -109,7 +111,10 @@ defmodule Kamex.Interpreter.Builtins.Lists do
   def cdr([[_ | tail]], _), do: tail
   def cadr([[_, head2 | _]], _), do: head2
 
-  def str_spilt([str, delim], _) when is_binary(str) and is_binary(delim),
+  def str_split([str, ""], _) when is_binary(str),
+    do: str |> String.split("") |> Enum.slice(1..-1)
+
+  def str_split([str, delim], _) when is_binary(str) and is_binary(delim),
     do: String.split(str, delim)
 
   def size([str], _) when is_binary(str), do: String.length(str)
@@ -206,18 +211,28 @@ defmodule Kamex.Interpreter.Builtins.Lists do
       |> Enum.into([])
       |> List.flatten()
 
+  def drop([0, list], _) when is_list(list), do: list
+  def drop([n, list], _) when is_list(list) and n < 0, do: list |> Enum.drop(-n)
+  def drop([n, list], _) when is_list(list) and n > 0, do: list |> Enum.drop(n)
+
   def intersperse([l, r], _), do: Enum.zip(l, r) |> Enum.flat_map(fn {x, y} -> [x, y] end)
 
-  # unique-mask is a bit annoying
-  # basically
-  # you have to find the first occurence of each element in the list
-  # and then mark it with a 1
+  # unique mask aka nub sieve.
+  # get a boolean vector indicating which first instance of each element in al ist
+  def unique_mask([str], _) when is_binary(str), do: unique_mask([String.graphemes(str)], nil)
 
-  # (,¨,\)'example'
-  # ┌─┬──┬───┬────┬─────┬──────┬───────┐
-  # │e│ex│exa│exam│examp│exampl│example│
-  # └─┴──┴───┴────┴─────┴──────┴───────┘
+  def unique_mask([list], _) when is_list(list),
+    do:
+      Enum.reduce(list, {[], []}, fn curr, {seen, vector} ->
+        if curr in seen,
+          do: {seen, [@fals | vector]},
+          else: {[curr | seen], [@tru | vector]}
+      end)
+      |> elem(1)
+      |> Enum.reverse()
 
+  # (prefixes "example")
+  # ["e", "ex", "exa", "exam", "examp", "exampl", "example"]
   def prefixes([str], _) when is_binary(str),
     do: str |> String.graphemes() |> Enum.scan(&(&2 <> &1))
 
@@ -225,9 +240,8 @@ defmodule Kamex.Interpreter.Builtins.Lists do
     do: 1..length(list) |> Enum.map(&Enum.slice(list, 0, &1))
 
   # inverse of `prefixes`, i.e. starts from the end and works backwards
-  # ┌─┬──┬───┬────┬─────┬──────┬───────┐
-  # │e│le│ple│mple│ample│xample│example│
-  # └─┴──┴───┴────┴─────┴──────┴───────┘
+  # (suffixes "example")
+  # ["e", "le", "ple", "mple", "ample", "xample", "example"]
   def suffixes([str], _) when is_binary(str),
     do: str |> String.graphemes() |> Enum.reverse() |> Enum.scan(&(&1 <> &2))
 
@@ -238,14 +252,12 @@ defmodule Kamex.Interpreter.Builtins.Lists do
 
   # just a sliding window on a list
   # (window 2 "example")
-  # ┌──┬──┬──┬──┬──┬──┐
-  # │ex│xa│am│mp│pl│le│
-  # └──┴──┴──┴──┴──┴──┘
+  # ["ex", "xa", "am", "mp", "pl", "le"]
   def window([size, str], _) when is_binary(str) and size > 0 do
     # TODO: see if there's a more concise way to put this
     size_decf = size - 1
     start = String.slice(str, 0, size_decf)
-    rest = String.slice(str, size_decf, String.length(str))
+    rest = String.slice(str, size_decf..-1)
 
     rest |> String.graphemes() |> Enum.scan(start, &(String.slice(&2, -size_decf, size) <> &1))
   end
@@ -253,7 +265,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
   def window([size, list], _) when is_list(list) and size > 0 do
     size_decf = size - 1
     start = Enum.slice(list, 0, size_decf)
-    rest = Enum.slice(list, size_decf, length(list))
+    rest = Enum.slice(list, size_decf..-1)
 
     rest |> Enum.scan(start, &(Enum.slice(&2, -size_decf, size) ++ [&1]))
   end
