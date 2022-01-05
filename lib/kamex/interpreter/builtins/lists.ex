@@ -28,6 +28,10 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         unique: :unique,
         where: :where,
         replicate: :replicate,
+        intersperse: :intersperse,
+        prefixes: :prefixes,
+        suffixes: :suffixes,
+        window: :window,
         shuffle: :shuffle
       ]
     end
@@ -191,6 +195,53 @@ defmodule Kamex.Interpreter.Builtins.Lists do
       |> Enum.map(fn {times, item} -> List.duplicate(item, times) end)
       |> Enum.into([])
       |> List.flatten()
+
+  def intersperse([l, r], _), do: Enum.zip(l, r) |> Enum.flat_map(fn {x, y} -> [x, y] end)
+
+  # (,¨,\)'example'
+  # ┌─┬──┬───┬────┬─────┬──────┬───────┐
+  # │e│ex│exa│exam│examp│exampl│example│
+  # └─┴──┴───┴────┴─────┴──────┴───────┘
+
+  def prefixes([str], _) when is_binary(str),
+    do: str |> String.graphemes() |> Enum.scan(&(&2 <> &1))
+
+  def prefixes([list], _) when is_list(list),
+    do: 1..length(list) |> Enum.map(&Enum.slice(list, 0, &1))
+
+  # inverse of `prefixes`, i.e. starts from the end and works backwards
+  # ┌─┬──┬───┬────┬─────┬──────┬───────┐
+  # │e│le│ple│mple│ample│xample│example│
+  # └─┴──┴───┴────┴─────┴──────┴───────┘
+  def suffixes([str], _) when is_binary(str),
+    do: str |> String.graphemes() |> Enum.reverse() |> Enum.scan(&(&1 <> &2))
+
+  def suffixes([list], _) when is_list(list) do
+    len = length(list)
+    1..len |> Enum.map(&Enum.slice(list, -&1, len))
+  end
+
+  # just a sliding window on a list
+  # (window 2 "example")
+  # ┌──┬──┬──┬──┬──┬──┐
+  # │ex│xa│am│mp│pl│le│
+  # └──┴──┴──┴──┴──┴──┘
+  def window([size, str], _) when is_binary(str) and size > 0 do
+    # TODO: see if there's a more concise way to put this
+    size_decf = size - 1
+    start = String.slice(str, 0, size_decf)
+    rest = String.slice(str, size_decf, String.length(str))
+
+    rest |> String.graphemes() |> Enum.scan(start, &(String.slice(&2, -size_decf, size) <> &1))
+  end
+
+  def window([size, list], _) when is_list(list) and size > 0 do
+    size_decf = size - 1
+    start = Enum.slice(list, 0, size_decf)
+    rest = Enum.slice(list, size_decf, length(list))
+
+    rest |> Enum.scan(start, &(Enum.slice(&2, -size_decf, size) ++ [&1]))
+  end
 
   def shuffle([list], _) when is_list(list), do: Enum.shuffle(list)
 end
