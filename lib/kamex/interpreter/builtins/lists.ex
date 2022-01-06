@@ -38,6 +38,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         "unique-mask": :unique_mask,
         prefixes: :prefixes,
         suffixes: :suffixes,
+        partition: :partition,
         window: :window,
         range: :range,
         "starts-with": :starts_with,
@@ -248,6 +249,56 @@ defmodule Kamex.Interpreter.Builtins.Lists do
   def suffixes([list], _) when is_list(list) do
     len = length(list)
     1..len |> Enum.map(&Enum.slice(list, -&1, len))
+  end
+
+  # TODO: decide on graphemes vs codepoints everywhere
+  def partition([vector, str], _) when is_list(vector) and is_binary(str),
+    do: partition([vector, String.graphemes(str)], nil) |> Enum.map(&Enum.join/1)
+
+  def partition([vector, list], _)
+      when is_list(vector) and is_list(list) and length(vector) == length(list) do
+    # TODO: find a more efficient way of detecting boolean vectors
+    bool_vector =
+      !Enum.find(vector, fn
+        1 -> false
+        0 -> false
+        _ -> true
+      end)
+
+    zipped = Enum.zip(vector, list)
+
+    zipped
+    |> then(
+      &if bool_vector do
+        Enum.reduce(&1, {0, [[]]}, fn
+          # If current is 0, just return 0 and result
+          {0, _}, {_, result} -> {0, result}
+          # If current is 1 and previous is 0, start a new string
+          {1, curr}, {0, result} -> {1, [[curr] | result]}
+          # Otherwise appedn to the current string
+          {1, curr}, {1, [curr_list | rest]} -> {1, [[curr | curr_list] | rest]}
+        end)
+      else
+        Enum.reduce(&1, {0, [[]]}, fn
+          # Discard any 0s
+          {0, _}, acc ->
+            acc
+
+          # If the current vector value is smaller or bigger than the current biggest, append to current string.
+          {val, curr}, {biggest, [curr_list | rest]} when val <= biggest ->
+            {val, [[curr | curr_list] | rest]}
+
+          # Else if it's the new biggest, start a new string.
+          {val, curr}, {_, result} ->
+            {val, [[curr] | result]}
+        end)
+      end
+    )
+    |> elem(1)
+    |> Enum.reverse()
+    |> Enum.map(&Enum.reverse/1)
+    # Remove empty list at the start. Need to figure out why it happens
+    |> Enum.slice(1..-1)
   end
 
   # just a sliding window on a list
