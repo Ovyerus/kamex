@@ -42,6 +42,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         window: :window,
         range: :range,
         "starts-with": :starts_with,
+        keys: :keys,
         "index-of": :index_of,
         in?: :in?,
         shuffle: :shuffle
@@ -321,7 +322,9 @@ defmodule Kamex.Interpreter.Builtins.Lists do
     rest |> Enum.scan(start, &(Enum.slice(&2, -size_decf, size) ++ [&1]))
   end
 
-  # TODO: inner/outer-prod
+  # TODO: inner/outer-prod, matrix product it seems
+  # https://aplwiki.com/wiki/Inner_Product
+  # https://aplwiki.com/wiki/Outer_Product
 
   # is this inclusive?
   def range([start, stop], _) when is_integer(start) and is_integer(stop), do: start..stop
@@ -332,7 +335,17 @@ defmodule Kamex.Interpreter.Builtins.Lists do
   def starts_with([prefix, list], _) when is_list(list) and is_list(prefix),
     do: if(List.starts_with?(list, prefix), do: @tru, else: @fals)
 
-  # TODO: keys
+  # --> (keys "Mississipi")
+  # (("M" (0)) ("i" (1 4 7 9)) ("s" (2 3 5 6)) ("p" (8)))
+  def keys([str], _) when is_binary(str),
+    do: keys([String.graphemes(str)], nil)
+
+  def keys([list], _) when is_list(list),
+    do:
+      list
+      |> Enum.with_index()
+      |> Enum.reduce(%{}, fn {v, i}, map -> Map.put(map, v, [i | Map.get(map, v, [])]) end)
+      |> Enum.map(fn {k, v} -> [k, Enum.reverse(v)] end)
 
   def index_of([to_check, str], _) when is_binary(to_check) and is_binary(str),
     do: index_of([String.graphemes(to_check), String.graphemes(str)], nil)
