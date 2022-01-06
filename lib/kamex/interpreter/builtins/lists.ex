@@ -45,6 +45,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         keys: :keys,
         "index-of": :index_of,
         in?: :in?,
+        "find-seq": :find_seq,
         shuffle: :shuffle
       ]
     end
@@ -355,13 +356,17 @@ defmodule Kamex.Interpreter.Builtins.Lists do
 
   # ucs - turn unicode chars to ints and vice versa
 
-  def in?([contents, container]) when is_binary(contents) and is_binary(container),
-    do: if(String.contains?(container, contents), do: @tru, else: @fals)
+  def in?([needle, haystack]) when is_binary(needle) and is_binary(haystack),
+    do: if(String.contains?(haystack, needle), do: @tru, else: @fals)
 
-  def in?([contents, container]) when is_list(container),
-    do: if(contents in container, do: @tru, else: @fals)
+  def in?([needle, haystack]) when is_list(haystack),
+    do: if(needle in haystack, do: @tru, else: @fals)
 
-  # find-seq
+  def find_seq([needle, haystack], _) when is_binary(needle) and is_binary(haystack),
+    do: in?([needle, haystack])
+
+  def find_seq([needle, haystack], _) when is_list(needle) and is_list(haystack),
+    do: if(Kamex.Util.sublist?(haystack, needle), do: @tru, else: @fals)
 
   def shuffle([list], _) when is_list(list), do: Enum.shuffle(list)
 
