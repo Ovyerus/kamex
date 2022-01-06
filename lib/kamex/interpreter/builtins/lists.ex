@@ -44,9 +44,12 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         "starts-with": :starts_with,
         keys: :keys,
         "index-of": :index_of,
+        ucs: :ucs,
         in?: :in?,
         "find-seq": :find_seq,
-        shuffle: :shuffle
+        shuffle: :shuffle,
+        "str-join": :str_join,
+        "str-explode": :str_explode
       ]
     end
   end
@@ -353,7 +356,13 @@ defmodule Kamex.Interpreter.Builtins.Lists do
   def index_of([to_check, list], _) when is_list(to_check) and is_list(list),
     do: Enum.map(to_check, fn x -> Enum.find_index(list, x) end)
 
-  # ucs - turn unicode chars to ints and vice versa
+  # turn unicode chars to ints and vice versa
+  # (ucs "Hello World")
+  # [72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]
+  def ucs([str], _) when is_binary(str),
+    do: :binary.bin_to_list(str)
+
+  def ucs([list], _) when is_list(list), do: Enum.into(list, <<>>, &<<&1>>)
 
   def in?([needle, haystack]) when is_binary(needle) and is_binary(haystack),
     do: if(String.contains?(haystack, needle), do: @tru, else: @fals)
@@ -369,5 +378,6 @@ defmodule Kamex.Interpreter.Builtins.Lists do
 
   def shuffle([list], _) when is_list(list), do: Enum.shuffle(list)
 
-  # str-explode, str-join
+  def str_join([list], _) when is_list(list), do: Enum.join(list)
+  def str_explode([str], _) when is_binary(str), do: str |> String.split() |> Enum.slice(1..-1)
 end
