@@ -10,7 +10,7 @@ defmodule Kamex.Interpreter.Builtins do
   @fals 0
   @falsey [[], @fals]
 
-  @supported [
+  @supported %{
     println: :println,
     tack: :tack,
     nth: :nth,
@@ -29,26 +29,27 @@ defmodule Kamex.Interpreter.Builtins do
     every: :every,
     "flat-map": :flat_map,
     id: :id
-  ]
+  }
 
   defmacro mapping do
     map_supported_to_mod = fn mod, {call_name, fn_name} -> {call_name, {fn_name, mod}} end
 
     items =
-      Enum.map(@supported, &map_supported_to_mod.(__MODULE__, &1)) ++
+      [
+        Enum.map(@supported, &map_supported_to_mod.(__MODULE__, &1)),
         Enum.map(Lists.supported(), &map_supported_to_mod.(Lists, &1))
+      ]
+      |> Enum.map(&Enum.into(&1, %{}))
+      |> Enum.reduce(%{}, &Map.merge/2)
 
-    quote do
-      unquote(items)
-    end
+    Macro.escape(items)
   end
 
-  def builtin?(name), do: Keyword.get(mapping(), name)
-  def test(), do: mapping()
+  def builtin?(name), do: Map.get(mapping(), name)
 
   def run(name, args, locals) do
     args = Enum.map(args, &compute_expr(&1, locals))
-    {real_fn, mod} = Keyword.get(mapping(), name)
+    {real_fn, mod} = Map.get(mapping(), name)
 
     {apply(mod, real_fn, [args, locals]), locals}
   end

@@ -9,7 +9,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
 
   defmacro supported do
     quote do
-      [
+      %{
         iota: :iota,
         tie: :tie,
         flatten: :flatten,
@@ -50,7 +50,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         shuffle: :shuffle,
         "str-join": :str_join,
         "str-explode": :str_explode
-      ]
+      }
     end
   end
 
