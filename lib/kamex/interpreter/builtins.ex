@@ -87,7 +87,7 @@ defmodule Kamex.Interpreter.Builtins do
   def fac([num], _) when is_integer(num), do: num * fac([num - 1], nil)
 
   def map([fun, arg], locals) when is_list(arg), do: map([fun | arg], locals)
-  def map([fun, str], locals) when is_binary(str), do: map([fun | String.graphemes(str)], locals)
+  def map([fun, str], locals) when is_binary(str), do: map([fun | String.codepoints(str)], locals)
   def map([fun | args], locals), do: Enum.map(args, &compute_expr([fun, &1], locals))
 
   def filter([fun, list], locals),

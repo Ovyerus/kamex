@@ -179,7 +179,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
       end)
 
   def unique([str], _) when is_binary(str),
-    do: str |> String.graphemes() |> Enum.uniq() |> Enum.join()
+    do: str |> String.codepoints() |> Enum.uniq() |> Enum.join()
 
   def unique([list], _) when is_list(list), do: Enum.uniq(list)
 
@@ -222,7 +222,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
 
   # unique mask aka nub sieve.
   # get a boolean vector indicating which first instance of each element in al ist
-  def unique_mask([str], _) when is_binary(str), do: unique_mask([String.graphemes(str)], nil)
+  def unique_mask([str], _) when is_binary(str), do: unique_mask([String.codepoints(str)], nil)
 
   def unique_mask([list], _) when is_list(list),
     do:
@@ -237,7 +237,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
   # (prefixes "example")
   # ["e", "ex", "exa", "exam", "examp", "exampl", "example"]
   def prefixes([str], _) when is_binary(str),
-    do: str |> String.graphemes() |> Enum.scan(&(&2 <> &1))
+    do: str |> String.codepoints() |> Enum.scan(&(&2 <> &1))
 
   def prefixes([list], _) when is_list(list),
     do: 1..length(list) |> Enum.map(&Enum.slice(list, 0, &1))
@@ -246,16 +246,15 @@ defmodule Kamex.Interpreter.Builtins.Lists do
   # (suffixes "example")
   # ["e", "le", "ple", "mple", "ample", "xample", "example"]
   def suffixes([str], _) when is_binary(str),
-    do: str |> String.graphemes() |> Enum.reverse() |> Enum.scan(&(&1 <> &2))
+    do: str |> String.codepoints() |> Enum.reverse() |> Enum.scan(&(&1 <> &2))
 
   def suffixes([list], _) when is_list(list) do
     len = length(list)
     1..len |> Enum.map(&Enum.slice(list, -&1, len))
   end
 
-  # TODO: decide on graphemes vs codepoints everywhere
   def partition([vector, str], _) when is_list(vector) and is_binary(str),
-    do: partition([vector, String.graphemes(str)], nil) |> Enum.map(&Enum.join/1)
+    do: partition([vector, String.codepoints(str)], nil) |> Enum.map(&Enum.join/1)
 
   def partition([vector, list], _)
       when is_list(vector) and is_list(list) and length(vector) == length(list) do
@@ -312,7 +311,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
     start = String.slice(str, 0, size_decf)
     rest = String.slice(str, size_decf..-1)
 
-    rest |> String.graphemes() |> Enum.scan(start, &(String.slice(&2, -size_decf, size) <> &1))
+    rest |> String.codepoints() |> Enum.scan(start, &(String.slice(&2, -size_decf, size) <> &1))
   end
 
   def window([size, list], _) when is_list(list) and size > 0 do
@@ -336,10 +335,10 @@ defmodule Kamex.Interpreter.Builtins.Lists do
   def starts_with([prefix, list], _) when is_list(list) and is_list(prefix),
     do: if(List.starts_with?(list, prefix), do: @tru, else: @fals)
 
-  # --> (keys "Mississipi")
-  # (("M" (0)) ("i" (1 4 7 9)) ("s" (2 3 5 6)) ("p" (8)))
+  # --> (keys "Mississippi")
+  # (("M" (0)) ("i" (1 4 7 10)) ("s" (2 3 5 6)) ("p" (8 9)))
   def keys([str], _) when is_binary(str),
-    do: keys([String.graphemes(str)], nil)
+    do: keys([String.codepoints(str)], nil)
 
   def keys([list], _) when is_list(list),
     do:
@@ -349,7 +348,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
       |> Enum.map(fn {k, v} -> [k, Enum.reverse(v)] end)
 
   def index_of([to_check, str], _) when is_binary(to_check) and is_binary(str),
-    do: index_of([String.graphemes(to_check), String.graphemes(str)], nil)
+    do: index_of([String.codepoints(to_check), String.codepoints(str)], nil)
 
   def index_of([to_check, list], _) when is_list(to_check) and is_list(list),
     do: Enum.map(to_check, fn x -> Enum.find_index(list, x) end)
