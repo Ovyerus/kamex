@@ -20,4 +20,8 @@ defmodule Kamex.Exceptions do
   defmodule IllegalTypeError do
     defexception [:message]
   end
+
+  defmodule ParserError do
+    defexception [:message]
+  end
 end

@@ -1,6 +1,6 @@
 defmodule Kamex.Interpreter do
   @moduledoc false
-  alias Kamex.Exceptions
+  alias Kamex.{Exceptions, Parser}
   alias Kamex.Interpreter.{Builtins, SpecialForms}
 
   # TODO: redo stuff to revolve around true/false instead of empty lists lol
@@ -9,12 +9,12 @@ defmodule Kamex.Interpreter do
     with input <- String.to_charlist(input),
          {:ok, tokens, _} <- :lexer.string(input),
          :ok <- check_tokens(tokens) do
-      :parser.parse(tokens)
+      Parser.parse(tokens)
     end
   end
 
   def run(input, locals \\ %{}) when is_binary(input) do
-    {:ok, ast} = to_ast(input)
+    ast = to_ast(input)
 
     Enum.reduce(
       ast,
