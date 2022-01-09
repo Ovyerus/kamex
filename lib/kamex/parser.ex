@@ -21,8 +21,8 @@ defmodule Kamex.Parser do
   def parse(tokens, in_list \\ false)
   def parse([], true), do: raise(Exceptions.ParserError, message: "unexpected end of input")
   def parse([], false), do: []
-
   def parse({nil, _}, _), do: []
+
   def parse({:tack, _, x}, _), do: [:tack, x]
   def parse({:atop, _, funs}, _), do: [:atop | funs]
   def parse({:int, _, int}, _), do: int
@@ -30,6 +30,18 @@ defmodule Kamex.Parser do
   def parse({:complex, _, {real, im}}, _), do: Complex.new(real, im)
   def parse({:string, _, string}, _), do: string
   def parse({:ident, _, atom}, _), do: atom
+
+  def parse([{:quot, _}, {:"(", _} | tail], in_list) do
+    # TODO: add a `Quoted` class to differentiate between syntax lists?
+    {list, tail} = cursed_list_helper(tail)
+    [[:quote, list] | parse(tail, in_list)]
+  end
+
+  def parse([{:quot, _}, {:ident, _, atom} | _], _), do: [:quote, atom]
+
+  # TODO: is there actually restrictions on what can be quoted
+  def parse([{:quot, _} | _], _),
+    do: raise(Exceptions.ParserError, message: "expected identifier or list after quote")
 
   def parse([{:")", _} | _], false),
     do: raise(Exceptions.ParserError, message: "unexpected closing parenthesis")
