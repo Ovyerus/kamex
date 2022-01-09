@@ -7,10 +7,10 @@ IdentChar      = [^'"\s\r\n\t\f\(\)\[\],@]
 
 Digit        = [0-9]
 Int          = (-?{Digit}+)
-Exponent     = [eE]{Int}
+Exponent     = ([eE]{Int})
 Decimal      = \.{Digit}+
-Float        = ({Int}({Exponent}|({Decimal}({Exponent}?))))
-ComplexPart  = ({Int}|{Float})
+Float        = ({Int}({Exponent}|({Decimal}{Exponent}?)))
+ComplexPart  = (({Float})|({Int}))
 Hex          = [0-9a-fA-F]
 
 FullIdent  = {IdentStartChar}{IdentChar}*
