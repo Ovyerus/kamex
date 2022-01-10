@@ -21,6 +21,10 @@ defmodule Kamex.Exceptions do
     defexception [:message]
   end
 
+  defmodule MathError do
+    defexception [:message]
+  end
+
   defmodule ParserError do
     defexception [:message]
   end

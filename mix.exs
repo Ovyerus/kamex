@@ -23,6 +23,8 @@ defmodule Kamex.MixProject do
     [
       {:credo, "~> 1.6", only: :dev},
       {:complex, "~> 0.3.0"},
+      {:math, "~> 0.7.0"},
+      {:ratio, "~> 3.0"},
       {:typed_struct, "~> 0.2.1"}
     ]
   end

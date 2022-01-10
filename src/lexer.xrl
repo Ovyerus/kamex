@@ -62,6 +62,7 @@ atop_to_idents(Atop) when is_list(Atop) ->
   lists:map(fun(T) -> list_to_atom(T) end, Tokens).
 
 list_to_num(Str) when is_list(Str) ->
+  % TODO: i dont think erlang supports `1e3` but does `1.2e3`. need to properly look
   IsFloat = lists:member($., Str) or lists:member($e, Str) or lists:member($E, Str),
 
   if
