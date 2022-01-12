@@ -3,8 +3,8 @@ defmodule Kamex.Interpreter.Builtins do
 
   import Kamex.Interpreter, only: [compute_expr: 2]
   # alias Kamex.Exceptions
-  require __MODULE__.Lists
-  alias __MODULE__.Lists
+  require __MODULE__.{Lists, Math}
+  alias __MODULE__.{Lists, Math}
 
   @tru 1
   @fals 0
@@ -15,13 +15,6 @@ defmodule Kamex.Interpreter.Builtins do
     tack: :tack,
     nth: :nth,
     not: :not_,
-    =: :eq,
-    "\\=": :neq,
-    +: :add,
-    -: :sub,
-    *: :mul,
-    /: :div,
-    %: :mod,
     fac: :fac,
     map: :map,
     filter: :filter,
@@ -37,7 +30,8 @@ defmodule Kamex.Interpreter.Builtins do
     items =
       [
         Enum.map(@supported, &map_supported_to_mod.(__MODULE__, &1)),
-        Enum.map(Lists.supported(), &map_supported_to_mod.(Lists, &1))
+        Enum.map(Lists.supported(), &map_supported_to_mod.(Lists, &1)),
+        Enum.map(Math.supported(), &map_supported_to_mod.(Math, &1))
       ]
       |> Enum.map(&Enum.into(&1, %{}))
       |> Enum.reduce(%{}, &Map.merge/2)
@@ -70,19 +64,6 @@ defmodule Kamex.Interpreter.Builtins do
   # def not_([value], _), do: if(value in @falsey, do: @tru, else: @fals)
   def not_([x], _) when x in @falsey, do: @tru
   def not_([_], _), do: @fals
-
-  def eq([a, b], _), do: if(a == b, do: @tru, else: @fals)
-  def neq([a, b], _), do: if(a == b, do: @fals, else: @tru)
-
-  def add([a, b], _) when is_binary(a) and is_binary(b), do: a <> b
-  def add([a, b], _), do: a + b
-
-  def sub([x], _), do: x * -1
-  def sub([a, b], _), do: a - b
-
-  def div([a, b], _), do: a / b
-  def mul([a, b], _), do: a * b
-  def mod([a, b], _), do: rem(a, b)
 
   def fac([0], _), do: 1
   def fac([num], _) when is_integer(num), do: num * fac([num - 1], nil)

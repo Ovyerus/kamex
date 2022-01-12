@@ -7,7 +7,51 @@ defmodule Kamex.Interpreter.Builtins.Math do
   @fals 0
   # @falsey [[], @fals]
 
-  alias Kamex.Util.Math, as: Kamath
+  # Go home diaz ur drunk
+  @dialyzer {:nowarn_function, nth_root: 2}
+
+  defmacro supported do
+    quote do
+      %{
+        +: :add,
+        -: :subtract,
+        *: :multiply,
+        /: :divide,
+        "//": :divide_int,
+        %: :modulo,
+        sqrt: :sqrt,
+        "nth-root": :nth_root,
+        **: :power,
+        =: :equals,
+        "/=": :not_equals,
+        <: :less_than,
+        >: :greater_than,
+        <=: :less_than_or_equal,
+        >=: :greater_than_or_equal,
+        ceil: :ceiling,
+        floor: :floor,
+        gcd: :gcd,
+        lcm: :lcm,
+        bernoulli: :bernoulli,
+        digamma: :digamma,
+        "lambert-w0": :lambert_w0,
+        "jacobi-sym": :jacobi_sym,
+        exp: :exp,
+        "even-f": :even_f,
+        "odd-f": :odd_f,
+        odd?: :odd,
+        even?: :even,
+        min: :min,
+        max: :max,
+        "hamming-weight": :hamming_weight,
+        re: :re,
+        im: :im,
+        phasor: :phasor,
+        "as-complex": :as_complex,
+        "as-real": :as_real
+      }
+    end
+  end
 
   def add([a, b], _) when is_binary(a) and is_binary(b), do: a <> b
   def add([a, b], _) when is_number(a) and is_number(b), do: a + b
