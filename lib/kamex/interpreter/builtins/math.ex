@@ -1,6 +1,7 @@
 defmodule Kamex.Interpreter.Builtins.Math do
   @moduledoc false
   alias Kamex.Exceptions
+  alias Kamex.Util.Math, as: Kamath
 
   @tru 1
   @fals 0
@@ -53,25 +54,28 @@ defmodule Kamex.Interpreter.Builtins.Math do
   # ---
 
   def modulo([x], _) when is_number(x), do: abs(x)
-  # TODO: need to sqrt norm
-  def modulo([%Complex{} = x], _), do: x
+  def modulo([%Complex{} = x], _), do: Complex.sqrt(Kamath.norm_complex(x))
   def modulo([a, b], _) when is_integer(a) and is_integer(b), do: rem(a, b)
 
-  def sqrt([x], _) when is_number(x), do: :math.sqrt(x)
+  def sqrt([x], _) when is_number(x), do: Math.sqrt(x)
 
   def sqrt([%Complex{im: 0, re: re}], _) when re < 0,
     do: raise(Exceptions.MathError, message: "sqrt: im=0 re<0 doesn't exist")
 
-  # TODO: sqrt of complex
+  # TODO: pala's impl is different, compare
+  def sqrt([%Complex{} = x], _), do: Complex.sqrt(x)
+
   # ---
 
   def nth_root([_, exp], _) when not is_number(exp),
     do: raise(Exceptions.IllegalTypeError, message: "nth_root: exponent must be a real number")
 
   # TODO: need to convert to int, which way does kami round?
-  def nth_root([x, exp], _) when is_integer(x), do: :math.pow(x, 1 / exp)
-  def nth_root([x, exp], _) when is_float(x), do: :math.pow(x, 1 / exp)
-  def nth_root([%Complex{} = x, exp], _), do: Complex.pow(x, Complex.new(1 / exp))
+  def nth_root([x, exp], _) when is_integer(x), do: trunc(x ** (1 / exp))
+  def nth_root([x, exp], _) when is_float(x), do: x ** (1 / exp)
+
+  def nth_root([%Complex{} = x, exp], _),
+    do: Complex.pow(x, Complex.new(1 / exp))
 
   # ---
 
@@ -151,13 +155,13 @@ defmodule Kamex.Interpreter.Builtins.Math do
     top / bottom
   end
 
-  # TODO: this
+  def gcd([%Complex{} = n1, n2], _) when is_integer(n2),
+    do: Kamath.gcd_complex(n1, Complex.new(n2))
 
-  def gcd([%Complex{} = n1, n2], _) when is_integer(n2), do: gcd_complex(n1, Complex.new(n2))
-  def gcd([n1, %Complex{} = n2], _) when is_integer(n1), do: gcd_complex(Complex.new(n1), n2)
-  def gcd([%Complex{} = n1, %Complex{} = n2], _), do: gcd_complex(n1, n2)
+  def gcd([n1, %Complex{} = n2], _) when is_integer(n1),
+    do: Kamath.gcd_complex(Complex.new(n1), n2)
 
-  defp gcd_complex(_, _), do: nil
+  def gcd([%Complex{} = n1, %Complex{} = n2], _), do: Kamath.gcd_complex(n1, n2)
 
   # ---
   def lcm([a, b], _) when is_integer(a) and is_integer(b), do: Math.lcm(a, b)
@@ -177,11 +181,13 @@ defmodule Kamex.Interpreter.Builtins.Math do
   end
 
   # Alternatively `(c1 * c2) / gcd_complex(c1, c2)`
-  def lcm([%Complex{} = n1, n2], _) when is_integer(n2), do: lcm_complex(n1, Complex.new(n2))
-  def lcm([n1, %Complex{} = n2], _) when is_integer(n1), do: lcm_complex(Complex.new(n1), n2)
-  def lcm([%Complex{} = n1, %Complex{} = n2], _), do: lcm_complex(n1, n2)
+  def lcm([%Complex{} = n1, n2], _) when is_integer(n2),
+    do: Kamath.lcm_complex(n1, Complex.new(n2))
 
-  defp lcm_complex(_, _), do: nil
+  def lcm([n1, %Complex{} = n2], _) when is_integer(n1),
+    do: Kamath.lcm_complex(Complex.new(n1), n2)
+
+  def lcm([%Complex{} = n1, %Complex{} = n2], _), do: Kamath.lcm_complex(n1, n2)
 
   # ---
 
@@ -190,7 +196,6 @@ defmodule Kamex.Interpreter.Builtins.Math do
   def digamma([x], _) when is_number(x), do: digamma([Complex.new(x)], nil)
 
   def digamma([%Complex{} = x], nil) do
-    # TODO: my own impl which isnt just straight ripping the OG
     # phi(z) = ln(z) - 1/2z
     z = Complex.sub(Complex.ln(x), Complex.div(Complex.new(1), Complex.mult(2, x)))
     if z.im != 0, do: z, else: z.re
@@ -198,6 +203,8 @@ defmodule Kamex.Interpreter.Builtins.Math do
 
   def lambert_w0([x], _) when is_number(x), do: Kamath.lambert_w(x)
   def lambert_w0([%Complex{re: x}], _), do: Kamath.lambert_w(x)
+
+  def jacobi_sym([n, k], _) when is_integer(n) and is_integer(k), do: Kamath.jacobi(n, k)
 
   # ---
 
@@ -221,7 +228,7 @@ defmodule Kamex.Interpreter.Builtins.Math do
   def max_([%Complex{} = a, b], _) when is_number(b), do: Kamath.max_complex(a, Complex.new(b))
   def max_([a, %Complex{} = b], _) when is_number(a), do: Kamath.max_complex(Complex.new(a), b)
 
-  # TODO; hamming weight between integers
+  def hamming_weight([x]) when is_integer(x) and x >= 0, do: Kamath.hamming_weight(x)
 
   def re([x], _) when is_number(x), do: x
   def re([%Complex{re: re}], _), do: re

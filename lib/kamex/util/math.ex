@@ -6,6 +6,7 @@ defmodule Kamex.Util.Math do
 
   @inverse_e -0.36787944118
   @e1 Math.exp(1)
+  @hamming_shift 0xFFFFFFFFFFFFFFFF
 
   # Compute the nth bernoulli number
   def bernoulli(n) when is_integer(n) do
@@ -169,6 +170,17 @@ defmodule Kamex.Util.Math do
     end
   end
 
+  # ---
+
+  def gaussian_rem(%Complex{} = a, %Complex{} = b) do
+    prod = Complex.mult(a, Complex.conjugate(b))
+    p = prod.re / (b.re ** 2 + b.im ** 2)
+    q = prod.im / (b.re ** 2 + b.im ** 2)
+    gamma = Complex.new(p, trunc(q))
+
+    Complex.sub(a, Complex.mult(gamma, b))
+  end
+
   def norm_complex(%Complex{} = x) do
     y = Math.sqrt(x.re ** 2 + x.im ** 2)
     Complex.div(x, Complex.new(y))
@@ -182,4 +194,27 @@ defmodule Kamex.Util.Math do
   def max_complex(%Complex{} = a, %Complex{} = b) do
     if a > b, do: a, else: b
   end
+
+  def gcd_complex(%Complex{} = a, %Complex{} = b) do
+    if gaussian_rem(a, b) == Complex.new(0),
+      do: b,
+      else: gcd_complex(b, gaussian_rem(a, b))
+  end
+
+  def lcm_complex(%Complex{} = a, %Complex{} = b),
+    do: Complex.div(Complex.mult(a, b), gcd_complex(a, b))
+
+  # ---
+
+  def popcount(n) when is_integer(n), do: popcount(<<n::integer>>, 0)
+  defp popcount(<<>>, acc), do: acc
+  defp popcount(<<bit::integer-1, rest::bits>>, acc), do: popcount(rest, acc + bit)
+
+  # TODO: not so sure about this implementation, need to take another look at it
+  def hamming_weight(n) when is_integer(n), do: hamming_weight(n, 0)
+  defp hamming_weight(x, total) when x <= 0, do: total
+
+  defp hamming_weight(x, total),
+    # is this totally necessary?
+    do: hamming_weight(x >>> 64, total + popcount(x &&& @hamming_shift))
 end
