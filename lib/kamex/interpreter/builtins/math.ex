@@ -6,6 +6,8 @@ defmodule Kamex.Interpreter.Builtins.Math do
   @fals 0
   # @falsey [[], @fals]
 
+  alias Kamex.Util.Math, as: Kamath
+
   def add([a, b], _) when is_binary(a) and is_binary(b), do: a <> b
   def add([a, b], _) when is_number(a) and is_number(b), do: a + b
   # Can't do my own `is_complex` helper so multiple clauses will have to do :/
@@ -183,5 +185,56 @@ defmodule Kamex.Interpreter.Builtins.Math do
 
   # ---
 
-  # TODO: bernoulli
+  def bernoulli([x], _) when is_integer(x), do: Kamath.bernoulli(x)
+
+  def digamma([x], _) when is_number(x), do: digamma([Complex.new(x)], nil)
+
+  def digamma([%Complex{} = x], nil) do
+    # TODO: my own impl which isnt just straight ripping the OG
+    # phi(z) = ln(z) - 1/2z
+    z = Complex.sub(Complex.ln(x), Complex.div(Complex.new(1), Complex.mult(2, x)))
+    if z.im != 0, do: z, else: z.re
+  end
+
+  def lambert_w0([x], _) when is_number(x), do: Kamath.lambert_w(x)
+  def lambert_w0([%Complex{re: x}], _), do: Kamath.lambert_w(x)
+
+  # ---
+
+  def exp([x], _) when is_number(x), do: Math.exp(x)
+  def exp([%Complex{} = x], _), do: Complex.exp(x)
+
+  def even_f([x], _) when is_number(x), do: x * 2
+  def odd_f([x], _) when is_number(x), do: x * 2 + 1
+
+  def odd([x], _) when is_integer(x), do: if(rem(x, 2) == 1, do: @tru, else: @fals)
+  def even([x], _) when is_integer(x), do: if(rem(x, 2) == 0, do: @tru, else: @fals)
+
+  # min/max
+  def min_([a, b], _) when is_number(a) and is_number(b), do: min(a, b)
+  def min_([%Complex{} = a, %Complex{} = b], _), do: Kamath.min_complex(a, b)
+  def min_([%Complex{} = a, b], _) when is_number(b), do: Kamath.min_complex(a, Complex.new(b))
+  def min_([a, %Complex{} = b], _) when is_number(a), do: Kamath.min_complex(Complex.new(a), b)
+
+  def max_([a, b], _) when is_number(a) and is_number(b), do: max(a, b)
+  def max_([%Complex{} = a, %Complex{} = b], _), do: Kamath.max_complex(a, b)
+  def max_([%Complex{} = a, b], _) when is_number(b), do: Kamath.max_complex(a, Complex.new(b))
+  def max_([a, %Complex{} = b], _) when is_number(a), do: Kamath.max_complex(Complex.new(a), b)
+
+  # TODO; hamming weight between integers
+
+  def re([x], _) when is_number(x), do: x
+  def re([%Complex{re: re}], _), do: re
+
+  def im([x], _) when is_number(x), do: 0
+  def im([%Complex{im: im}], _), do: im
+
+  def phasor([x], _) when is_number(x), do: 0
+  def phasor([%Complex{re: re, im: im}], _), do: Math.atan2(im, re)
+
+  def as_complex([x], _) when is_number(x), do: Complex.new(x)
+  def as_complex([%Complex{} = x], _), do: x
+
+  def as_real([x], _) when is_number(x), do: x
+  def as_real([%Complex{re: re}], _), do: re
 end

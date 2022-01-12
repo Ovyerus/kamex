@@ -168,4 +168,18 @@ defmodule Kamex.Util.Math do
       end)
     end
   end
+
+  def norm_complex(%Complex{} = x) do
+    y = Math.sqrt(x.re ** 2 + x.im ** 2)
+    Complex.div(x, Complex.new(y))
+  end
+
+  # TODO: make sure that this comparison actually works properly
+  def min_complex(%Complex{} = a, %Complex{} = b) do
+    if a < b, do: a, else: b
+  end
+
+  def max_complex(%Complex{} = a, %Complex{} = b) do
+    if a > b, do: a, else: b
+  end
 end
