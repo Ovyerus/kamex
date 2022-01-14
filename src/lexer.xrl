@@ -1,8 +1,8 @@
 Definitions.
 
-IdentStartChar = [^'"\s\r\n\t\f\(\)\[\],@#$]
+IdentStartChar = [^'"\\\s\r\n\t\f\(\)\[\],@#$:\\;]
 % '
-IdentChar      = [^'"\s\r\n\t\f\(\)\[\],@]
+IdentChar      = [^'"\s\r\n\t\f\(\)\[\],@;]
 % '
 
 Digit        = [0-9]
@@ -24,9 +24,13 @@ nil : {token, {nil, TokenLine}}.
 \)  : {token, {')',  TokenLine}}.
 
 % Special modifiers for idents/functions
+\$        : {token, {bind, TokenLine}}.
 #{Digit}+ : {token, {tack, TokenLine, tack_to_int(TokenChars)}}.
 #         : {token, {fork, TokenLine}}.
-\$        : {token, {bind, TokenLine}}.
+:         : {token, {map, TokenLine}}.
+@         : {token, {atop, TokenLine}}.
+\\        : {token, {partition, TokenLine}}.
+% \^        : {token, {over, TokenLine}}.
 '         : {token, {quot, TokenLine}}. % '
 
 % Literals
@@ -37,9 +41,6 @@ nil : {token, {nil, TokenLine}}.
 {Float}                     : {token, {float, TokenLine, list_to_float(TokenChars)}}.
 {Int}                       : {token, {int, TokenLine, list_to_integer(TokenChars)}}.
 
-% TODO: fix to allow partial applied functions beforehand
-% ({FullIdent}(@{FullIdent})+) : {token, {atop, TokenLine, atop_to_idents(TokenChars)}}.
-@            : {token, {atop, TokenLine}}.
 {FullIdent}+ : {token, {ident, TokenLine, list_to_atom(TokenChars)}}.
 
 % Garbage

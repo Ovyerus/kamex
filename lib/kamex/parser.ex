@@ -109,6 +109,14 @@ defmodule Kamex.Parser do
   def parse([{:bind, _} | _], _),
     do: raise(Exceptions.ParserError, message: "expected ( after $")
 
+  # def parse([{:map, _} | list], _), do: nil
+
+  def parse([{:partition, line} | tail], in_list) do
+    # Basically adding another parens where we are for anything in front of it
+    tail = [{:"(", line} | tail] ++ [{:")", nil}]
+    parse(tail, in_list)
+  end
+
   def parse([{:")", _} | _], false),
     do: raise(Exceptions.ParserError, message: "unexpected closing parenthesis")
 
