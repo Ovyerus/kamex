@@ -13,6 +13,10 @@ but eventually plans to expand to be a Elixir implementation of the brilliant
 
 ## Builtins
 
+**Note:** this list is out of date. I am currently working on bringing Kamex up
+to feature-parity with KamilaLisp, so I will update this once I've caught up and
+can properly list stuff categorically.
+
 - +, -, \*, /, ++, --, !
 - list, cons, append, head, tail
 - print, zerop
@@ -46,8 +50,8 @@ iex> run(~S[  (at $(-) $(= 0 (% _ 2)) (iota 100))  ])
 ```elixir
 iex> run(~S[
 ...>   (defun factorial (n)
-...>     (if (zerop n) 1
-...>         (* n (factorial (-- n)))))
+...>     (if (= 0 n) 1
+...>       ($(* n)@factorial@$(- _ 1) n)))
 ...>
 ...>   (factorial 10)
 ...> ])

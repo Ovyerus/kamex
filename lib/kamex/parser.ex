@@ -109,12 +109,13 @@ defmodule Kamex.Parser do
   def parse([{:bind, _} | _], _),
     do: raise(Exceptions.ParserError, message: "expected ( after $")
 
-  # def parse([{:map, _} | list], _), do: nil
+  def parse([{:map, _} | list], in_list), do: [:bind, :map | parse(list, in_list)]
 
   def parse([{:partition, line} | tail], in_list) do
-    # Basically adding another parens where we are for anything in front of it
-    tail = [{:"(", line} | tail] ++ [{:")", nil}]
-    parse(tail, in_list)
+    # TODO: this currently doesnt work if its at the root level of the syntax. What do we do?
+    {list, tail} = cursed_list_helper(tail)
+    # Re-add the parenthesis we consumed, to emulate adding one that didn't exist.
+    [list | parse([{:")", line} | tail], in_list)]
   end
 
   def parse([{:")", _} | _], false),

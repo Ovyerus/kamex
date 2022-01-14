@@ -30,7 +30,6 @@ nil : {token, {nil, TokenLine}}.
 :         : {token, {map, TokenLine}}.
 @         : {token, {atop, TokenLine}}.
 \\        : {token, {partition, TokenLine}}.
-% \^        : {token, {over, TokenLine}}.
 '         : {token, {quot, TokenLine}}. % '
 
 % Literals
