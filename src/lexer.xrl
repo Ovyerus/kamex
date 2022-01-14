@@ -30,16 +30,17 @@ nil : {token, {nil, TokenLine}}.
 '         : {token, {quot, TokenLine}}. % '
 
 % Literals
-0[xX]{Hex}+                  : {token, {int, TokenLine, hex_to_int(TokenChars)}}.
-0[bB][10]+                   : {token, {int, TokenLine, binary_to_int(TokenChars)}}.
-"(\\.|\r?\n|[^\\\n\"])*"     : {token, {string, TokenLine, list_to_binary(clean_str(TokenChars))}}.
-{ComplexPart}J{ComplexPart}  : {token, {complex, TokenLine, list_to_complex(TokenChars)}}.
-{Float}                      : {token, {float, TokenLine, list_to_float(TokenChars)}}.
-{Int}                        : {token, {int, TokenLine, list_to_integer(TokenChars)}}.
+0[xX]{Hex}+                 : {token, {int, TokenLine, hex_to_int(TokenChars)}}.
+0[bB][10]+                  : {token, {int, TokenLine, binary_to_int(TokenChars)}}.
+"(\\.|\r?\n|[^\\\n\"])*"    : {token, {string, TokenLine, list_to_binary(clean_str(TokenChars))}}.
+{ComplexPart}J{ComplexPart} : {token, {complex, TokenLine, list_to_complex(TokenChars)}}.
+{Float}                     : {token, {float, TokenLine, list_to_float(TokenChars)}}.
+{Int}                       : {token, {int, TokenLine, list_to_integer(TokenChars)}}.
 
 % TODO: fix to allow partial applied functions beforehand
-({FullIdent}(@{FullIdent})+) : {token, {atop, TokenLine, atop_to_idents(TokenChars)}}.
-{FullIdent}+                 : {token, {ident, TokenLine, list_to_atom(TokenChars)}}.
+% ({FullIdent}(@{FullIdent})+) : {token, {atop, TokenLine, atop_to_idents(TokenChars)}}.
+@            : {token, {atop, TokenLine}}.
+{FullIdent}+ : {token, {ident, TokenLine, list_to_atom(TokenChars)}}.
 
 % Garbage
 ;.*           : {token, {comment, TokenLine}}.
@@ -57,9 +58,9 @@ list_to_complex(Str) when is_list(Str) ->
   [Real, Im] = string:split(Str, "J"),
   {list_to_num(Real), list_to_num(Im)}.
 
-atop_to_idents(Atop) when is_list(Atop) ->
-  Tokens = string:tokens(Atop, "@"),
-  lists:map(fun(T) -> list_to_atom(T) end, Tokens).
+% atop_to_idents(Atop) when is_list(Atop) ->
+%   Tokens = string:tokens(Atop, "@"),
+%   lists:map(fun(T) -> list_to_atom(T) end, Tokens).
 
 list_to_num(Str) when is_list(Str) ->
   % TODO: i dont think erlang supports `1e3` but does `1.2e3`. need to properly look

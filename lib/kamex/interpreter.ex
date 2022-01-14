@@ -16,6 +16,7 @@ defmodule Kamex.Interpreter do
   def run(input, locals \\ %{}) when is_binary(input) do
     ast = to_ast(input)
 
+    # TODO: store env/locals in an Agent?
     Enum.reduce(
       ast,
       {nil, locals},
