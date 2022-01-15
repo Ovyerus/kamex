@@ -181,4 +181,6 @@ defmodule Kamex.Interpreter.SpecialForms do
       do: {items ++ [:"$1"], count + 1},
       else: {items, count}
   end
+
+  # TODO: cond
 end
