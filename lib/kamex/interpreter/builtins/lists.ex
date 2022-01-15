@@ -3,6 +3,7 @@ defmodule Kamex.Interpreter.Builtins.Lists do
 
   import Kamex.Interpreter, only: [compute_expr: 2]
   alias Kamex.{Exceptions, Interpreter.Builtins, Util.Comb}
+  alias Tensor.{Matrix, Tensor}
 
   @tru 1
   @fals 0
@@ -40,6 +41,8 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         suffixes: :suffixes,
         partition: :partition,
         window: :window,
+        "inner-prod": :inner_prod,
+        "outer-prod": :outer_prod,
         range: :range,
         "starts-with": :starts_with,
         keys: :keys,
@@ -64,10 +67,10 @@ defmodule Kamex.Interpreter.Builtins.Lists do
         _ -> raise Exceptions.IllegalTypeError, message: "iota: expected a list of integers"
       end)
 
-    # TODO: move the post processing to cart_prod
-    iotas
-    |> Enum.reduce(&Comb.cart_product([&1, &2]))
-    |> Enum.map(fn x -> x |> List.flatten() |> Enum.reverse() end)
+    Comb.cartesian_product(iotas)
+    # iotas
+    # |> Enum.reduce(&Comb.cart_product([&1, &2]))
+    # |> Enum.map(fn x -> x |> List.flatten() |> Enum.reverse() end)
   end
 
   def tie(args, _), do: args
@@ -325,9 +328,49 @@ defmodule Kamex.Interpreter.Builtins.Lists do
     rest |> Enum.scan(start, &(Enum.slice(&2, -size_decf, size) ++ [&1]))
   end
 
-  # TODO: inner/outer-prod, matrix product it seems
-  # https://aplwiki.com/wiki/Inner_Product
-  # https://aplwiki.com/wiki/Outer_Product
+  # TODO: enforce callables here and in other functions like map
+  def inner_prod([_f, _g, [], []], _), do: []
+  def inner_prod([_f, g, [x], [y]], locals), do: compute_expr([g, [x, y]], locals)
+
+  def inner_prod([f, g, l1, l2], locals)
+      when is_list(l1) and is_list(l2) and length(l1) == length(l2) do
+    Enum.zip_with(l1, l2, &compute_expr([g, [&1, &2]], locals))
+    |> Enum.reduce(&compute_expr([f, [&1, &2]], locals))
+  end
+
+  def inner_prod([f, g, %Tensor{} = a, %Tensor{} = b], locals) do
+    [n_a_rows, n_a_cols] = Tensor.dimensions(a)
+    [n_b_rows, n_b_cols] = Tensor.dimensions(b)
+
+    if n_a_rows != n_b_cols do
+      raise ArgumentError,
+        message:
+          "inner_prod: invalid matrices: #{n_a_rows}x#{n_a_cols} and #{n_b_rows}x#{n_b_cols}"
+    end
+
+    rows = Matrix.rows(a)
+    cols = Matrix.columns(b)
+    xn = length(rows) - 1
+    yn = length(cols) - 1
+
+    result =
+      for x <- 0..xn,
+          y <- 0..yn,
+          do:
+            Enum.zip_with(
+              Enum.at(rows, x),
+              Enum.at(cols, y),
+              &compute_expr([g, [&1, &2]], locals)
+            )
+            |> Enum.reduce(&compute_expr([f, [&1, &2]], locals))
+
+    result
+    |> Enum.chunk_every(n_b_cols)
+    |> then(&Matrix.new(&1, n_a_rows, n_b_cols))
+  end
+
+  def outer_prod([f, a, b], locals) when is_list(a) and is_list(b),
+    do: Comb.cartesian_product([a, b]) |> Enum.map(&compute_expr([f, &1], locals))
 
   # is this inclusive?
   def range([start, stop], _) when is_integer(start) and is_integer(stop), do: start..stop

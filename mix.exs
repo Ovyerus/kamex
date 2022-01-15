@@ -7,7 +7,8 @@ defmodule Kamex.MixProject do
       version: "0.1.0",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      xref: [exclude: [Extractable]]
     ]
   end
 
@@ -25,6 +26,7 @@ defmodule Kamex.MixProject do
       {:complex, "~> 0.3.0"},
       {:math, "~> 0.7.0"},
       {:ratio, "~> 3.0"},
+      {:tensor, "~> 2.1"},
       {:typed_struct, "~> 0.2.1"}
     ]
   end
