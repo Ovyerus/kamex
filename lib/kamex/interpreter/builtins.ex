@@ -30,6 +30,8 @@ defmodule Kamex.Interpreter.Builtins do
     discard: :discard,
     lift: :lift,
     type: :type,
+    "to-string": :to_string,
+    "parse-num": :parse_num,
     list_env: :list_env,
     size: :size,
     empty?: :empty?
