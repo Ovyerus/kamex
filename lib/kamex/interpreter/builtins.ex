@@ -4,8 +4,8 @@ defmodule Kamex.Interpreter.Builtins do
   import Kamex.Interpreter, only: [compute_expr: 2]
   alias Kamex.Exceptions
 
-  require __MODULE__.{Lists, Math}
-  alias __MODULE__.{Lists, Math}
+  require __MODULE__.{Fold, Lists, Math}
+  alias __MODULE__.{Fold, Lists, Math}
 
   @tru 1
   @fals 0
@@ -41,6 +41,7 @@ defmodule Kamex.Interpreter.Builtins do
     items =
       [
         Enum.map(@supported, &map_supported_to_mod.(__MODULE__, &1)),
+        Enum.map(Fold.supported(), &map_supported_to_mod.(Fold, &1)),
         Enum.map(Lists.supported(), &map_supported_to_mod.(Lists, &1)),
         Enum.map(Math.supported(), &map_supported_to_mod.(Math, &1))
       ]

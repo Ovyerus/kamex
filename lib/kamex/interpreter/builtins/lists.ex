@@ -330,12 +330,12 @@ defmodule Kamex.Interpreter.Builtins.Lists do
 
   # TODO: enforce callables here and in other functions like map
   def inner_prod([_f, _g, [], []], _), do: []
-  def inner_prod([_f, g, [x], [y]], locals), do: compute_expr([g, [x, y]], locals)
+  def inner_prod([_f, g, [x], [y]], locals), do: compute_expr([g, x, y], locals)
 
   def inner_prod([f, g, l1, l2], locals)
       when is_list(l1) and is_list(l2) and length(l1) == length(l2) do
-    Enum.zip_with(l1, l2, &compute_expr([g, [&1, &2]], locals))
-    |> Enum.reduce(&compute_expr([f, [&1, &2]], locals))
+    Enum.zip_with(l1, l2, &compute_expr([g, &1, &2], locals))
+    |> Enum.reduce(&compute_expr([f, &1, &2], locals))
   end
 
   def inner_prod([f, g, %Tensor{} = a, %Tensor{} = b], locals) do
