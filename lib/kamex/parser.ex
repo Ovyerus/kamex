@@ -2,20 +2,35 @@ defmodule Kamex.Parser do
   @moduledoc false
   alias Kamex.Exceptions
 
-  defp cursed_list_helper(tail) do
-    # A stupid helper function to match parentheses nodes. This took me too long
-    # to figure out and I really want to find a cleaner solution in the future.
-    # TODO: given we now have the second var, we can probably move this to a normal parse function
-    case Enum.split_while(parse(tail, true), fn
-           {:eol, _} -> false
-           _ -> true
-         end) do
-      {list, [{:eol, tail}]} ->
+  defp cursed_list_helper(tail, do_parse \\ true) do
+    # Last item exists to determine if we halted naturally reduce_while ended as
+    # a result. Not sure if that's needed or could get caught by this first
+    # clause here, will need to do some testing
+    result =
+      Enum.reduce_while(tail, {[], tail, true}, fn
+        _, {_, [], _} ->
+          raise Exceptions.ParserError, message: "unexpected end of input"
+
+        _, {list, [{:"(", _} = a | tail], _} ->
+          {new_list, tail} = cursed_list_helper(tail, false)
+
+          # TODO: find last item and use that line number for closing (actually its probably the first one, do research dummy)
+          {:cont, {[{:")", 999} | new_list] ++ [a | list], tail, true}}
+
+        _, {list, [{:")", _} | tail], _} ->
+          {:halt, {list, tail}}
+
+        _, {list, [head | tail], _} ->
+          {:cont, {[head | list], tail, true}}
+      end)
+
+    case result do
+      {list, tail} ->
+        list = if(do_parse, do: list |> Enum.reverse() |> parse(), else: list)
         {list, tail}
 
-      x ->
-        IO.inspect(x)
-        raise Exceptions.ParserError, message: "if this error occurs, god help you"
+      _ ->
+        raise(Exceptions.ParserError, message: "unexpected end of input")
     end
   end
 
@@ -57,83 +72,80 @@ defmodule Kamex.Parser do
     {chunk, tail}
   end
 
-  def parse(tokens, in_list \\ false)
-  def parse([], true), do: raise(Exceptions.ParserError, message: "unexpected end of input")
-  def parse([], false), do: []
-  def parse({nil, _}, _), do: []
+  def parse(tokens)
+  # def parse([]), do: raise(Exceptions.ParserError, message: "unexpected end of input")
+  def parse([]), do: []
+  def parse({nil, _}), do: []
 
-  def parse({:tack, _, x}, _), do: [:tack, x]
-  def parse({:atop, _}, _), do: raise(Exceptions.ParserError, message: "unexpected `@` (atop)")
-  def parse({:int, _, int}, _), do: int
-  def parse({:float, _, float}, _), do: float
-  def parse({:complex, _, {real, im}}, _), do: Complex.new(real, im)
-  def parse({:string, _, string}, _), do: string
-  def parse({:ident, _, atom}, _), do: atom
+  def parse({:tack, _, x}), do: [:tack, x]
+  def parse({:atop, _}), do: raise(Exceptions.ParserError, message: "unexpected `@` (atop)")
+  def parse({:int, _, int}), do: int
+  def parse({:float, _, float}), do: float
+  def parse({:complex, _, {real, im}}), do: Complex.new(real, im)
+  def parse({:string, _, string}), do: string
+  def parse({:ident, _, atom}), do: atom
 
-  def parse([{:quot, _}, {:"(", _} | tail], in_list) do
+  def parse([{:quot, _}, {:"(", _} | tail]) do
     # TODO: add a `Quoted` class to differentiate between syntax lists?
     # TODO: need to not parse inside here?
     {list, tail} = cursed_list_helper(tail)
-    [[:quote, list] | parse(tail, in_list)]
+    [[:quote, list] | parse(tail)]
   end
 
-  def parse([{:quot, _}, {:ident, _, atom} | _], _), do: [:quote, atom]
+  def parse([{:quot, _}, {:ident, _, atom} | tail]),
+    do: [[:quote, atom] | parse(tail)]
 
   # TODO: is there actually restrictions on what can be quoted
-  def parse([{:quot, _} | _], _),
+  def parse([{:quot, _} | _]),
     do: raise(Exceptions.ParserError, message: "expected identifier or list after quote")
 
-  def parse([{:comment, _} | tail], in_list), do: parse(tail, in_list)
+  def parse([{:comment, _} | tail]), do: parse(tail)
 
-  def parse([{:fork, _}, {:"(", _} | tail], in_list) do
+  def parse([{:fork, _}, {:"(", _} | tail]) do
     {list, tail} = cursed_list_helper(tail)
-    [[:fork | list] | parse(tail, in_list)]
+    [[:fork | list] | parse(tail)]
   end
 
-  def parse([{:bind, _}, {:"(", _} | tail], in_list) do
+  def parse([{:bind, _}, {:"(", _} | tail]) do
     {list, tail} = cursed_list_helper(tail)
 
     case tail do
       [{:atop, _} | tail] ->
         {atop_chunk, tail} = cursed_atop_helper([:bind | list], tail)
-        [atop_chunk | parse(tail, in_list)]
+        [atop_chunk | parse(tail)]
 
       _ ->
-        [[:bind | list] | parse(tail, in_list)]
+        [[:bind | list] | parse(tail)]
     end
   end
 
-  def parse([{:fork, _} | _], _),
+  def parse([{:fork, _} | _]),
     do: raise(Exceptions.ParserError, message: "expected ( after #")
 
-  def parse([{:bind, _} | _], _),
+  def parse([{:bind, _} | _]),
     do: raise(Exceptions.ParserError, message: "expected ( after $")
 
-  def parse([{:map, _} | list], in_list), do: [:bind, :map | parse(list, in_list)]
+  def parse([{:map, _} | list]), do: [:bind, :map | [parse(list)]]
 
-  def parse([{:partition, line} | tail], in_list) do
+  def parse([{:partition, line} | tail]) do
     # TODO: this currently doesnt work if its at the root level of the syntax. What do we do?
     {list, tail} = cursed_list_helper(tail)
     # Re-add the parenthesis we consumed, to emulate adding one that didn't exist.
-    [list | parse([{:")", line} | tail], in_list)]
+    [list | parse([{:")", line} | tail])]
   end
 
-  def parse([{:")", _} | _], false),
+  def parse([{:")", _} | _]),
     do: raise(Exceptions.ParserError, message: "unexpected closing parenthesis")
 
-  def parse([{:")", _} | tail], true) do
-    [{:eol, tail}]
-  end
-
-  def parse([{:"(", _} | tail], in_list) do
+  def parse([{:"(", _} | tail]) do
     {list, tail} = cursed_list_helper(tail)
-    [list | parse(tail, in_list)]
+    [list | parse(tail)]
   end
 
-  def parse([{:ident, _, atom}, {:atop, _} | tail], in_list) do
+  def parse([{:ident, _, atom}, {:atop, _} | tail]) do
     {atop_chunk, tail} = cursed_atop_helper(atom, tail)
-    [atop_chunk | parse(tail, in_list)]
+    [atop_chunk | parse(tail)]
   end
 
-  def parse([head | tail], in_list), do: [parse(head, in_list) | parse(tail, in_list)]
+  def parse([head | tail]), do: [parse(head) | parse(tail)]
 end
