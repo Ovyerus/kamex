@@ -311,22 +311,16 @@ defmodule Kamex.Interpreter.Builtins.Lists do
   # just a sliding window on a list
   # (window 2 "example")
   # ["ex", "xa", "am", "mp", "pl", "le"]
-  def window([size, str], _) when is_binary(str) and size > 0 do
-    # TODO: see if there's a more concise way to put this
-    size_decf = size - 1
-    start = String.slice(str, 0, size_decf)
-    rest = String.slice(str, size_decf..-1)
+  def window([size, str], _) when is_binary(str) and size > 0,
+    do:
+      str
+      |> String.codepoints()
+      |> Enum.chunk_every(size, 1, :discard)
+      |> Enum.reduce([], &[Enum.join(&1) | &2])
+      |> Enum.reverse()
 
-    rest |> String.codepoints() |> Enum.scan(start, &(String.slice(&2, -size_decf, size) <> &1))
-  end
-
-  def window([size, list], _) when is_list(list) and size > 0 do
-    size_decf = size - 1
-    start = Enum.slice(list, 0, size_decf)
-    rest = Enum.slice(list, size_decf..-1)
-
-    rest |> Enum.scan(start, &(Enum.slice(&2, -size_decf, size) ++ [&1]))
-  end
+  def window([size, list], _) when is_list(list) and size > 0,
+    do: Enum.chunk_every(list, size, 1, :discard)
 
   # TODO: enforce callables here and in other functions like map
   def inner_prod([_f, _g, [], []], _), do: []
