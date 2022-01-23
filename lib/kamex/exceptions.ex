@@ -29,4 +29,8 @@ defmodule Kamex.Exceptions do
     # TODO: enhance to smth link `UnexpectedTokenError` and add line number
     defexception [:message]
   end
+
+  defmodule SyntaxError do
+    defexception [:message]
+  end
 end

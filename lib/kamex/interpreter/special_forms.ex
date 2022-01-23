@@ -80,30 +80,99 @@ defmodule Kamex.Interpreter.SpecialForms do
   end
 
   def lambda([input_args, body], locals) do
-    input_len = length(input_args)
+    # input_len = length(input_args)
 
     # `?arg` denotes optional arguments, which default to null/empty list
     # `...arg` denotes a rest arg (for variadics). default to [] if not given at runtime
 
-    # TODO: Make sure that optionals only exist after all requireds, and that max one variadic exists, after all requireds and optionals
+    # Make sure that optionals only exist after all requireds, and that max one variadic exists, after all requireds and optionals
+    # TODO: figure out adding this inside the parser
     # (lambda (x ?y ?z ...rest) body) OK
     # (lambda (x ?y ?z) body) OK
     # (lambda (x  ...rest ?y ?z) body) BAD
     # (lambda (?x y) body) BAD
     # (lambda (...rest1 ...rest2) body) BAD
+    input_args
+    # Fancy stuff to turn a normal boring window into smth like `[[:x, nil], [:y, :x], [:"...z", :y]]`
+    |> Enum.reverse()
+    |> Enum.chunk_every(2, 1, [nil])
+    |> Enum.reverse()
+    |> Enum.each(fn [curr, prev_] ->
+      curr = to_string(curr)
+      prev = to_string(prev_)
+
+      # TODO: this could probably be a bit better
+      cond do
+        String.starts_with?(prev, "...") && !String.starts_with?(curr, "...") ->
+          raise Exceptions.SyntaxError, "lambda: variadic arguments must come last"
+
+        String.starts_with?(curr, "...") && String.starts_with?(prev, "...") ->
+          raise Exceptions.SyntaxError, "lambda: can only contain one variadic argument"
+
+        prev_ != nil && String.starts_with?(prev, "?") &&
+            !(String.starts_with?(curr, "?") || String.starts_with?(curr, "...")) ->
+          raise Exceptions.SyntaxError,
+                "lambda: optional arguments must come after required arguments"
+
+        String.starts_with?("?...", curr) ->
+          raise Exceptions.SyntaxError,
+                "lambda: cannot combine optional and variadic arguments"
+
+        true ->
+          nil
+      end
+    end)
+
+    has_rest = Enum.any?(input_args, fn x -> x |> to_string() |> String.starts_with?("...") end)
+    optional_count = Enum.count(input_args, &String.starts_with?(to_string(&1), "?"))
+    total_count = length(input_args) - if has_rest, do: 1, else: 0
+    required_count = total_count - optional_count
+
+    cleaned_args =
+      Enum.map(input_args, fn x ->
+        case to_string(x) do
+          "..." <> arg -> String.to_atom(arg)
+          "?" <> arg -> String.to_atom(arg)
+          _ -> x
+        end
+      end)
 
     fun = fn called_args, called_local ->
-      called_args_len = length(called_args)
+      called_len = length(called_args)
 
-      if called_args_len != input_len do
-        raise Exceptions.ArityError,
-          message:
-            "wrong number of arguments for lambda: #{called_args_len} given when expected #{input_len}"
-      end
+      if called_len > total_count and not has_rest,
+        # TODO: total_count will be more than required when optionals, need to add a detection to show a range
+        do:
+          raise(
+            Exceptions.ArityError,
+            "lambda: too many arguments, expected #{total_count} but got #{called_len}"
+          )
+
+      optionals_fill =
+        cond do
+          called_len >= total_count ->
+            []
+
+          called_len < required_count ->
+            raise(
+              Exceptions.ArityError,
+              "lambda: too few arguments, expected #{total_count} but got #{called_len}"
+            )
+
+          true ->
+            # TODO: move this and anything using an empty list as null, to a proper `null`/`nil` atom, and make sure its handled appropriately.
+            Stream.cycle([[]]) |> Enum.take(optional_count - (called_len - required_count))
+        end
+
+      called_args = called_args ++ optionals_fill
 
       lamb_locals =
-        input_args
-        |> Enum.zip(called_args)
+        if has_rest do
+          {args, rest} = Enum.split(called_args, total_count)
+          Enum.zip(cleaned_args, args ++ [rest])
+        else
+          Enum.zip(cleaned_args, called_args)
+        end
         |> Enum.into(called_local)
 
       compute_expr(body, lamb_locals)
@@ -144,19 +213,18 @@ defmodule Kamex.Interpreter.SpecialForms do
   end
 
   def atop(funs, locals) do
-    # TODO: implement variadic lambdas for this to work
     nodes = atop_compose(funs)
 
     lambda([[:"...$1"], nodes], locals)
   end
 
-  defp atop_compose([final]), do: [final, :"...$1"]
+  defp atop_compose([final]), do: [final, :"$1"]
   defp atop_compose([head | tail]), do: [head, atop_compose(tail)]
 
   def fork([to_call | args], locals) do
     nodes = [to_call | Enum.map(args, &atop_compose([&1]))]
 
-    # TODO: does this work with multiple args? If so will need to implement variadic lambdas
+    # TODO: does this work with multiple args?
     lambda([[:"$1"], nodes], locals)
   end
 
